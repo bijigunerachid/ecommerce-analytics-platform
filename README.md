@@ -1,5 +1,7 @@
 # Real-Time E-Commerce Analytics Platform
 
+[![CI](https://github.com/bijigunerachid/ecommerce-analytics-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/bijigunerachid/ecommerce-analytics-platform/actions/workflows/ci.yml)
+
 A full-stack e-commerce operations app with a streaming analytics pipeline.
 
 - **Transactional side:** a React + Express app over PostgreSQL for managing products, customers,
@@ -152,3 +154,10 @@ See [docs/database.md](docs/database.md) for the schema design.
 docker compose down -v     # stops containers AND deletes the database volume
 docker compose up -d postgres
 ```
+
+## Contributing and CI
+
+Every change goes through a feature branch and a pull request. GitHub Actions runs formatting,
+lint, migration, and test checks against a fresh PostgreSQL database on each pull request. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the branch naming, commit conventions, and how to protect
+`main`.
