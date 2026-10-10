@@ -1,7 +1,6 @@
 import bcrypt from 'bcryptjs';
+import { PG_UNIQUE_VIOLATION } from '../db/pg-errors.js';
 import { conflict } from '../utils/http-error.js';
-
-const PG_UNIQUE_VIOLATION = '23505';
 
 export function createUsersService({ usersRepository, bcryptRounds }) {
   return {

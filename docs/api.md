@@ -34,7 +34,7 @@ Unknown body fields are rejected.
 | Role      | Can                                                    |
 | --------- | ------------------------------------------------------ |
 | `admin`   | Everything, including user management                  |
-| `analyst` | Read operational data and analytics (added in later steps) |
+| `analyst` | Read operational data (categories, products, ...) and analytics |
 
 The role is re-read from the database on every request, so deactivating a user or changing their
 role takes effect immediately, even for existing sessions.
@@ -90,6 +90,97 @@ Returns `{ "user": { ... } }` for the current session, or `401`.
 
 - Email is trimmed and lowercased. Password must be 12–72 bytes. Role is `admin` or `analyst`.
 - `201` → `{ "user": { ... } }`, `409` if the email is taken.
+
+## Conventions for resource endpoints
+
+- **Access:** any signed-in user (admin or analyst) can `GET`; only admins can `POST`, `PATCH`,
+  or `DELETE` (others get `403`).
+- **Ids** are positive integers; a non-numeric id returns `400`, an unknown one `404`.
+- **Money** is a decimal string with up to 2 decimals, e.g. `"19.99"`. Numbers are accepted on
+  input and returned as strings, so no precision is lost to floating point.
+- **`PATCH`** updates only the fields you send. Sending `""` or `null` for `description` clears it.
+  An empty body returns `400`.
+- **Lists** accept these query parameters and return `{ data: [...], pagination }`:
+
+| Parameter  | Default | Notes                                                    |
+| ---------- | ------- | -------------------------------------------------------- |
+| `page`     | `1`     | 1-based                                                  |
+| `pageSize` | `20`    | 1–100                                                    |
+| `sort`     | varies  | One of the resource's sort fields; anything else is `400` |
+| `order`    | `asc`   | `asc` or `desc`                                          |
+| `search`   |         | Case-insensitive substring; `%` and `_` match literally  |
+
+```json
+{ "data": [], "pagination": { "page": 1, "pageSize": 20, "total": 42, "totalPages": 3 } }
+```
+
+## Categories
+
+| Method & path            | Body / query                           | Success            |
+| ------------------------ | -------------------------------------- | ------------------ |
+| `GET /categories`        | list params; `sort`: `name`, `createdAt`, `productCount` | `200` list |
+| `GET /categories/:id`    |                                        | `200 { category }` |
+| `POST /categories`       | `{ name, description? }`               | `201 { category }` |
+| `PATCH /categories/:id`  | any of `name`, `description`           | `200 { category }` |
+| `DELETE /categories/:id` |                                        | `204`              |
+
+A category looks like
+`{ id, name, description, productCount, createdAt, updatedAt }`.
+
+- `409` if the name is already used (case-sensitive).
+- `409` when deleting a category that still has products.
+
+## Products
+
+| Method & path          | Body / query                         | Success           |
+| ---------------------- | ------------------------------------ | ----------------- |
+| `GET /products`        | list params + filters below          | `200` list        |
+| `GET /products/:id`    |                                      | `200 { product }` |
+| `POST /products`       | see below                            | `201 { product }` |
+| `PATCH /products/:id`  | any create field except `initialStock` | `200 { product }` |
+| `DELETE /products/:id` |                                      | `204`             |
+
+**List filters:** `categoryId`, `isActive` (`true`/`false`), `lowStock` (`true` = stock at or
+below the reorder level), `minPrice`, `maxPrice`. `sort`: `name` (default), `sku`, `price`,
+`stockQuantity`, `createdAt`. `search` matches name or SKU.
+
+**Create body:**
+
+```json
+{
+  "sku": "LAP-1",
+  "name": "Laptop Pro",
+  "description": "Optional",
+  "categoryId": 1,
+  "price": "1299.00",
+  "reorderLevel": 10,
+  "isActive": true,
+  "initialStock": 50
+}
+```
+
+- `sku`: 2–40 letters, digits, `-` or `_`; stored uppercase and unique (`409` on duplicates).
+- `reorderLevel` defaults to `10`, `isActive` to `true`, `initialStock` to `0`.
+- `initialStock` is recorded as a `restock` entry in the inventory ledger in the same transaction
+  as the product, so stock history is always complete.
+- An unknown `categoryId` returns `400` with `details[0].path = "categoryId"`.
+
+**Stock cannot be set through this endpoint.** `stockQuantity` is rejected on create and update;
+it changes only through inventory movements and orders.
+
+A product looks like:
+
+```json
+{
+  "id": 1, "sku": "LAP-1", "name": "Laptop Pro", "description": null,
+  "categoryId": 1, "categoryName": "Electronics", "price": "1299.00",
+  "stockQuantity": 50, "reorderLevel": 10, "isLowStock": false, "isActive": true,
+  "createdAt": "...", "updatedAt": "..."
+}
+```
+
+**Deleting:** a product that already has order or inventory history cannot be deleted (`409`);
+set `isActive` to `false` to retire it instead.
 
 ## Security notes
 
