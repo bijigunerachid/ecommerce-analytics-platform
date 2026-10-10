@@ -97,15 +97,22 @@ npm run migrate:up         # apply all pending migrations to the dev database
 
 ### 3. Create the first administrator
 
-There is no public sign-up. Create the first admin from the command line. You'll be prompted for
-the password, which won't be shown as you type:
+There is no public sign-up. Create the first admin from the command line:
 
 ```powershell
-npm run create-admin -- --email admin@example.com --name "Store Admin"
+npm run create-admin
 ```
 
-The password must be at least 12 characters. That admin can then create more accounts through
-`POST /api/users`. Add `--role analyst` to create an analyst from the command line instead.
+It asks for the email, full name, and password. The password isn't shown as you type and must be
+at least 12 characters. That admin can then create more accounts through `POST /api/users`.
+
+To pass the values as flags instead, call Node directly. Windows PowerShell drops the `--` in
+`npm run create-admin -- --email ...`, so the flags never reach the script through npm:
+
+```powershell
+node --env-file=../.env scripts/create-admin.js --email admin@example.com --name "Store Admin"
+# add --role analyst to create an analyst
+```
 
 ### 4. Run the API
 

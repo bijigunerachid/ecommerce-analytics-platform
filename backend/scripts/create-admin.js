@@ -2,9 +2,12 @@
 // there is no public registration. Later users can be created by an admin via POST /api/users.
 //
 // Usage (from backend/):
-//   npm run create-admin -- --email admin@example.com --name "Store Admin"
-// The password is read from the ADMIN_PASSWORD environment variable if set, otherwise
-// you are prompted for it (input hidden). Add --role analyst to create an analyst instead.
+//   npm run create-admin             prompts for email, name, and password (works in any shell)
+//   node --env-file=../.env scripts/create-admin.js --email admin@example.com --name "Store Admin"
+// Windows PowerShell drops the "--" in `npm run create-admin -- --email ...`, so flags cannot be
+// passed through npm there; use the prompts or call node directly as above.
+// The password is read from ADMIN_PASSWORD if set, otherwise prompted for (input hidden).
+// Add --role analyst to create an analyst instead.
 import readline from 'node:readline';
 import { parseArgs } from 'node:util';
 import { getDatabaseConfig } from '../src/config/database.js';
@@ -12,6 +15,16 @@ import { createPool } from '../src/db/pool.js';
 import { createUsersRepository } from '../src/repositories/users.repository.js';
 import { createUsersService } from '../src/services/users.service.js';
 import { createUserSchema } from '../src/validation/users.schemas.js';
+
+function prompt(question) {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
 
 function promptHidden(question) {
   return new Promise((resolve) => {
@@ -50,13 +63,21 @@ async function main() {
       test: { type: 'boolean', default: false },
     },
   });
-  if (!values.email || !values.name) {
-    throw new Error('Usage: npm run create-admin -- --email <email> --name "<full name>"');
+  let { email, name } = values;
+  if (!email || !name) {
+    if (!process.stdin.isTTY) {
+      throw new Error(
+        'Usage: node scripts/create-admin.js --email <email> --name "<full name>" ' +
+          '(or run in an interactive terminal to be prompted)',
+      );
+    }
+    email ||= await prompt('Email: ');
+    name ||= await prompt('Full name: ');
   }
 
   const parsed = createUserSchema.safeParse({
-    email: values.email,
-    fullName: values.name,
+    email,
+    fullName: name,
     role: values.role,
     password: await readPassword(),
   });
