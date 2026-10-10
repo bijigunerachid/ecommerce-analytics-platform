@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Read-only token: CI never needs to write to the repository.
+permissions:
+  contents: read
+
+# A newer push to the same branch or PR cancels the run that is still in progress.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint, format, tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          # Throwaway credentials for a database that exists only for this CI run.
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: ecommerce_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ecommerce_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ci
+      POSTGRES_PASSWORD: ci-only-password
+      POSTGRES_TEST_DB: ecommerce_test
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check migrations apply and revert cleanly
+        run: |
+          node scripts/migrate.js up --test
+          node scripts/migrate.js down all --test
+          node scripts/migrate.js up --test
+
+      - name: Run tests
+        run: npm test
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
