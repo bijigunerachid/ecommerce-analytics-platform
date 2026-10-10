@@ -1,0 +1,4 @@
+node_modules/
+coverage/
+migrations/
+package-lock.json

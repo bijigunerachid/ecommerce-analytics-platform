@@ -1,0 +1,31 @@
+{
+  "name": "ecommerce-analytics-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Express REST API for the Real-Time E-Commerce Analytics Platform",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "migrate:up": "node --env-file-if-exists=../.env scripts/migrate.js up",
+    "migrate:down": "node --env-file-if-exists=../.env scripts/migrate.js down",
+    "migrate:test": "node --env-file-if-exists=../.env scripts/migrate.js up --test",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "node-pg-migrate": "^9.0.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "vitest": "^4.1.11"
+  }
+}

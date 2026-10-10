@@ -47,7 +47,7 @@ A full-stack e-commerce operations app with a streaming analytics pipeline.
 
 - Git ≥ 2.40
 - Docker Desktop (Compose v2) — Kafka, Spark, and PostgreSQL all run in containers
-- Node.js ≥ 20.19 (22 LTS recommended)
+- Node.js ≥ 22.13 (22 LTS)
 - Python 3.10+ is optional on the host
 
 Check your machine from the repo root in PowerShell:
@@ -71,6 +71,51 @@ Copy-Item .env.example .env
 
 `.env` is git-ignored. Never commit real secrets or real customer data.
 
+> **Windows note:** save `.env` as UTF-8 **without** BOM. Windows PowerShell 5.1's
+> `Set-Content -Encoding utf8` adds a BOM, which breaks Node's `.env` parser. `Copy-Item`,
+> VS Code, and Notepad on Windows 11 are all fine.
+
 ## Getting started
 
-Setup and run instructions will be added as the services are implemented.
+### 1. Start PostgreSQL
+
+```powershell
+docker compose up -d postgres
+docker compose ps          # wait until STATUS shows "(healthy)"
+```
+
+On the first start the container also creates a separate `ecommerce_test` database that the
+automated tests use, so tests never touch your development data.
+
+### 2. Install backend dependencies and apply migrations
+
+```powershell
+cd backend
+npm install
+npm run migrate:up         # apply all pending migrations to the dev database
+```
+
+| Command                    | What it does                                     |
+| -------------------------- | ------------------------------------------------ |
+| `npm run migrate:up`       | Apply all pending migrations                     |
+| `npm run migrate:down`     | Revert the most recent migration                 |
+| `npm run migrate:test`     | Apply migrations to the test database            |
+| `npm test`                 | Run the automated tests (needs PostgreSQL running) |
+| `npm run lint`             | ESLint                                           |
+| `npm run format:check`     | Prettier check (`npm run format` to fix)         |
+
+Run a single test file or test by name:
+
+```powershell
+npx vitest run tests/integration/schema.test.js
+npx vitest run -t "rejects negative stock"
+```
+
+See [docs/database.md](docs/database.md) for the schema design.
+
+### Resetting the database
+
+```powershell
+docker compose down -v     # stops containers AND deletes the database volume
+docker compose up -d postgres
+```

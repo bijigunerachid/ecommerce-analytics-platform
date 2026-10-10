@@ -34,7 +34,7 @@ function Test-Tool {
 Test-Tool 'Git'            { git --version }                    ([version]'2.40')
 Test-Tool 'Docker'         { docker --version }                 ([version]'24.0')
 Test-Tool 'Docker Compose' { docker compose version }           ([version]'2.20')
-Test-Tool 'Node.js'        { node --version }                   ([version]'20.19')
+Test-Tool 'Node.js'        { node --version }                   ([version]'22.13')
 Test-Tool 'npm'            { npm --version }                    ([version]'10.0')
 # Python on the host is optional: Spark jobs run inside containers.
 Test-Tool 'Python'         { python --version }                 ([version]'3.10') -Required $false
