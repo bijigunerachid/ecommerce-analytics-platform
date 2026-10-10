@@ -95,14 +95,40 @@ npm install
 npm run migrate:up         # apply all pending migrations to the dev database
 ```
 
-| Command                    | What it does                                     |
-| -------------------------- | ------------------------------------------------ |
-| `npm run migrate:up`       | Apply all pending migrations                     |
-| `npm run migrate:down`     | Revert the most recent migration                 |
-| `npm run migrate:test`     | Apply migrations to the test database            |
-| `npm test`                 | Run the automated tests (needs PostgreSQL running) |
-| `npm run lint`             | ESLint                                           |
-| `npm run format:check`     | Prettier check (`npm run format` to fix)         |
+### 3. Create the first administrator
+
+There is no public sign-up. Create the first admin from the command line. You'll be prompted for
+the password, which won't be shown as you type:
+
+```powershell
+npm run create-admin -- --email admin@example.com --name "Store Admin"
+```
+
+The password must be at least 12 characters. That admin can then create more accounts through
+`POST /api/users`. Add `--role analyst` to create an analyst from the command line instead.
+
+### 4. Run the API
+
+```powershell
+npm run dev                # restarts automatically when files change
+```
+
+Check it at <http://localhost:4000/api/health>. The endpoints are documented in
+[docs/api.md](docs/api.md).
+
+### Backend commands (run from `backend/`)
+
+| Command                | What it does                                        |
+| ---------------------- | --------------------------------------------------- |
+| `npm run dev`          | Start the API with auto-reload                      |
+| `npm start`            | Start the API                                       |
+| `npm run create-admin` | Create an admin (or analyst) account                |
+| `npm run migrate:up`   | Apply all pending migrations                        |
+| `npm run migrate:down` | Revert the most recent migration                    |
+| `npm run migrate:test` | Apply migrations to the test database               |
+| `npm test`             | Run the automated tests (needs PostgreSQL running)  |
+| `npm run lint`         | ESLint                                              |
+| `npm run format:check` | Prettier check (`npm run format` to fix)            |
 
 Run a single test file or test by name:
 
