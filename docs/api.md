@@ -182,6 +182,139 @@ A product looks like:
 **Deleting:** a product that already has order or inventory history cannot be deleted (`409`);
 set `isActive` to `false` to retire it instead.
 
+## Customers
+
+Standard resource routes (`GET`/`POST /customers`, `GET`/`PATCH`/`DELETE /customers/:id`).
+
+**Body:** `{ email, firstName, lastName, phone?, city?, country? }`. Emails are stored lowercase
+and unique (`409`). Phone allows digits, spaces, `+ ( ) -`. Send `""` to clear optional fields.
+
+**List:** `search` matches full name or email; `country` filter (case-insensitive);
+`sort`: `name` (last, first; default), `email`, `createdAt`, `orderCount`, `totalSpent`.
+
+A customer includes purchase statistics, **excluding cancelled orders**:
+
+```json
+{ "id": 1, "email": "...", "firstName": "Alice", "lastName": "Martin", "phone": null,
+  "city": "Lyon", "country": "France", "orderCount": 2, "totalSpent": "75.00",
+  "lastOrderAt": "...", "createdAt": "...", "updatedAt": "..." }
+```
+
+Customers with orders cannot be deleted (`409`).
+
+## Idempotency keys
+
+Operations that must never run twice require an `Idempotency-Key` header: `POST /orders` and
+`POST /inventory/adjustments`. Generate a fresh random value (a UUID works) for each new operation
+and **reuse the same value when retrying** it (e.g. after a timeout).
+
+- First request → `201` with the result.
+- Same key and same request again → `200` with the **original** result and the header
+  `Idempotent-Replayed: true`. Nothing is applied a second time, even if the retries arrive
+  concurrently.
+- Same key with a different request → `409 IDEMPOTENCY_KEY_REUSED`.
+- Missing or malformed key (must be 8–100 letters, digits, `-`, `_`) → `400`.
+
+## Orders
+
+| Method & path               | Access | Notes                                    |
+| --------------------------- | ------ | ---------------------------------------- |
+| `GET /orders`               | any    | list (see filters)                       |
+| `GET /orders/:id`           | any    | includes `items`                         |
+| `POST /orders`              | admin  | requires `Idempotency-Key`               |
+| `PATCH /orders/:id/status`  | admin  | `{ "status": "paid" }`                   |
+
+Orders are never deleted; cancel them instead.
+
+### `POST /orders`
+
+```json
+{ "customerId": 7, "items": [ { "productId": 3, "quantity": 2 }, { "productId": 5, "quantity": 3 } ] }
+```
+
+The client sends only products and quantities. **Prices and totals are calculated by the server**
+from current product prices; sending `unitPrice` or `totalAmount` is rejected as unknown fields.
+Each product may appear once per order.
+
+In one transaction the server locks the products, checks them, records the order and its lines,
+deducts stock through the inventory ledger, and writes an `order.created` event. If anything
+fails, nothing is saved.
+
+| Status | `code`                   | When                                                     |
+| ------ | ------------------------ | -------------------------------------------------------- |
+| `201`  |                          | Order created; body `{ order }`                          |
+| `200`  |                          | Idempotent replay of an earlier request                  |
+| `400`  | `VALIDATION_ERROR`       | Bad body, unknown `customerId` or `productId`            |
+| `409`  | `INSUFFICIENT_STOCK`     | `details`: `[{ productId, sku, requested, available }]`  |
+| `409`  | `PRODUCT_UNAVAILABLE`    | A product is inactive                                    |
+| `409`  | `IDEMPOTENCY_KEY_REUSED` | Key already used for a different order                   |
+
+Concurrent orders for the same products are serialized with row locks (always taken in product-id
+order, so they cannot deadlock). Stock can never be oversold.
+
+An order looks like:
+
+```json
+{
+  "id": 42, "customerId": 7, "customerName": "Jane Doe", "customerEmail": "jane@example.com",
+  "status": "pending", "totalAmount": "2059.95", "itemCount": 2, "createdBy": 1,
+  "createdAt": "...", "updatedAt": "...",
+  "items": [
+    { "productId": 3, "sku": "LAP-1", "productName": "Laptop Pro", "categoryId": 1,
+      "quantity": 2, "unitPrice": "999.99", "lineTotal": "1999.98" }
+  ]
+}
+```
+
+`items` is included on `GET /orders/:id` and on create/status responses, not in lists.
+
+### `PATCH /orders/:id/status`
+
+Allowed transitions; anything else is `409 INVALID_STATUS_TRANSITION`:
+
+```
+pending ──► paid ──► shipped ──► delivered
+   │          │
+   └──────────┴──► cancelled
+```
+
+Cancelling returns every line's quantity to stock through the ledger (`cancellation`
+movements). A cancelled order cannot be cancelled again, so stock is never restored twice.
+Each change emits an `order.status_changed` event.
+
+### `GET /orders`
+
+Filters: `status`, `customerId`, `dateFrom`, `dateTo` (`YYYY-MM-DD`, UTC, both inclusive),
+`minTotal`, `maxTotal`. `search` matches customer name or email, or the exact order number.
+`sort`: `createdAt` (default, **newest first**), `totalAmount`, `status`.
+
+## Inventory
+
+### `GET /inventory/movements`
+
+The inventory ledger: every stock change with its reason. Any role.
+
+Filters: `productId`, `orderId`, `reason` (`order`, `restock`, `adjustment`, `cancellation`),
+`dateFrom`, `dateTo`. `sort`: `createdAt` (default, newest first), `quantityChange`.
+
+```json
+{ "id": 118, "productId": 3, "sku": "LAP-1", "productName": "Laptop Pro", "quantityChange": -2,
+  "reason": "order", "orderId": 42, "note": null, "createdBy": 1, "createdAt": "..." }
+```
+
+### `POST /inventory/adjustments` (admin, requires `Idempotency-Key`)
+
+```json
+{ "productId": 3, "quantityChange": 15, "reason": "restock", "note": "Supplier delivery" }
+```
+
+- `reason`: `restock` (must be positive) or `adjustment` (positive or negative, e.g. damaged
+  goods or a stock count correction). `order` and `cancellation` are reserved for the order flow.
+- `201 { movement }`; `409 INSUFFICIENT_STOCK` if the result would be negative; `400` for an
+  unknown product.
+
+See [events.md](events.md) for the events these operations emit.
+
 ## Security notes
 
 - Passwords are hashed with bcrypt (cost `BCRYPT_ROUNDS`, default 12).
