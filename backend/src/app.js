@@ -4,20 +4,31 @@ import express from 'express';
 import helmet from 'helmet';
 import { createAuthController } from './controllers/auth.controller.js';
 import { createCategoriesController } from './controllers/categories.controller.js';
+import { createCustomersController } from './controllers/customers.controller.js';
 import { createHealthController } from './controllers/health.controller.js';
+import { createInventoryController } from './controllers/inventory.controller.js';
+import { createOrdersController } from './controllers/orders.controller.js';
 import { createProductsController } from './controllers/products.controller.js';
 import { createUsersController } from './controllers/users.controller.js';
 import { requireAuth } from './middleware/auth.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { createCategoriesRepository } from './repositories/categories.repository.js';
+import { createCustomersRepository } from './repositories/customers.repository.js';
+import { createOrdersRepository } from './repositories/orders.repository.js';
+import { createOutboxRepository } from './repositories/outbox.repository.js';
 import { createProductsRepository } from './repositories/products.repository.js';
 import { createStockMovementsRepository } from './repositories/stock-movements.repository.js';
 import { createUsersRepository } from './repositories/users.repository.js';
 import { createAuthRouter } from './routes/auth.routes.js';
 import { createCrudRouter } from './routes/crud.routes.js';
+import { createInventoryRouter } from './routes/inventory.routes.js';
+import { createOrdersRouter } from './routes/orders.routes.js';
 import { createUsersRouter } from './routes/users.routes.js';
 import { createAuthService } from './services/auth.service.js';
 import { createCategoriesService } from './services/categories.service.js';
+import { createCustomersService } from './services/customers.service.js';
+import { createInventoryService } from './services/inventory.service.js';
+import { createOrdersService } from './services/orders.service.js';
 import { createProductsService } from './services/products.service.js';
 import { createUsersService } from './services/users.service.js';
 import {
@@ -25,6 +36,11 @@ import {
   listCategoriesQuerySchema,
   updateCategorySchema,
 } from './validation/categories.schemas.js';
+import {
+  createCustomerSchema,
+  listCustomersQuerySchema,
+  updateCustomerSchema,
+} from './validation/customers.schemas.js';
 import {
   createProductSchema,
   listProductsQuerySchema,
@@ -45,17 +61,32 @@ export function createApp({ db, config }) {
   const categoriesService = createCategoriesService({
     categoriesRepository: createCategoriesRepository(db),
   });
+  const outboxRepository = createOutboxRepository();
+  const stockMovementsRepository = createStockMovementsRepository({ db, outboxRepository });
+  const customersRepository = createCustomersRepository(db);
   const productsService = createProductsService({
     db,
     productsRepository: createProductsRepository(db),
-    stockMovementsRepository: createStockMovementsRepository(),
+    stockMovementsRepository,
   });
+  const customersService = createCustomersService({ customersRepository });
+  const ordersService = createOrdersService({
+    db,
+    ordersRepository: createOrdersRepository(db),
+    customersRepository,
+    stockMovementsRepository,
+    outboxRepository,
+  });
+  const inventoryService = createInventoryService({ db, stockMovementsRepository });
 
   const healthController = createHealthController({ db });
   const authController = createAuthController({ authService, ...auth });
   const usersController = createUsersController({ usersService });
   const categoriesController = createCategoriesController({ categoriesService });
   const productsController = createProductsController({ productsService });
+  const customersController = createCustomersController({ customersService });
+  const ordersController = createOrdersController({ ordersService });
+  const inventoryController = createInventoryController({ inventoryService });
   const authenticate = requireAuth(authService);
 
   const app = express();
@@ -65,6 +96,7 @@ export function createApp({ db, config }) {
     cors({
       origin: config.corsOrigins,
       credentials: true, // allow the browser to send the auth cookie
+      exposedHeaders: ['Idempotent-Replayed'],
     }),
   );
   app.use(express.json({ limit: '100kb' }));
@@ -106,6 +138,20 @@ export function createApp({ db, config }) {
       },
     }),
   );
+  api.use(
+    '/customers',
+    createCrudRouter({
+      controller: customersController,
+      requireAuth: authenticate,
+      schemas: {
+        list: listCustomersQuerySchema,
+        create: createCustomerSchema,
+        update: updateCustomerSchema,
+      },
+    }),
+  );
+  api.use('/orders', createOrdersRouter({ ordersController, requireAuth: authenticate }));
+  api.use('/inventory', createInventoryRouter({ inventoryController, requireAuth: authenticate }));
   app.use('/api', api);
 
   app.use(notFoundHandler);

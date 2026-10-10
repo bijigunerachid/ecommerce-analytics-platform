@@ -58,4 +58,21 @@ When an order is created, the order rows, the stock decrement, the stock movemen
 `order.created` row in `event_outbox` are written in **one transaction**. A separate relay then
 publishes unpublished outbox rows to Kafka and sets `published_at`. This guarantees that an event
 is published if and only if its business change committed, even if Kafka is temporarily down.
-`event_id` (UUID) is the deduplication key for the streaming pipeline.
+`event_id` (UUID) is the deduplication key for the streaming pipeline. Event contracts are in
+[events.md](events.md).
+
+## Concurrency and idempotency
+
+- **Overselling:** order creation locks the product rows (`SELECT ... FOR UPDATE`) before checking
+  stock, so concurrent orders for the same product run one after another. Locks are always taken
+  in ascending product id order, so two orders can never deadlock waiting on each other.
+  `products_stock_nonnegative` is the final safety net.
+- **Retried requests:** a transaction-scoped advisory lock on the idempotency key
+  (`pg_advisory_xact_lock(hashtext(key))`) makes concurrent requests with the same key wait for
+  each other. The waiting one then finds the committed order and returns it instead of creating
+  another. The unique constraint on `idempotency_key` backs this up.
+- **Status changes** lock the order row, so two simultaneous cancellations cannot both restore
+  stock.
+- **Ledger keys:** the order flow generates movement keys like `order-42-product-3` and
+  `order-42-cancel-product-3`. Client keys for manual adjustments are stored as `client:<key>`, so
+  the two can never collide.
