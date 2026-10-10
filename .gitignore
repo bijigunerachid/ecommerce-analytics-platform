@@ -1,0 +1,69 @@
+# ---- AI assistant files (local only, never pushed) ----
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+
+# ---- Secrets & local config ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# ---- Node ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+coverage/
+dist/
+build/
+.vite/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.ipynb_checkpoints/
+
+# ---- Spark / analytical output (generated, never committed) ----
+analytics/output/
+analytics/checkpoints/
+spark-warehouse/
+metastore_db/
+derby.log
+*.parquet
+*.crc
+
+# ---- Data: only small, synthetic samples in data/samples are committed ----
+data/*
+!data/.gitkeep
+!data/samples/
+!data/README.md
+*.dump
+*.sql.gz
+*.backup
+
+# ---- Docker volumes bound locally ----
+.docker-data/
+
+# ---- Logs ----
+logs/
+*.log
+
+# ---- OS / editors ----
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
