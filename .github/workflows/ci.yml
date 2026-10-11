@@ -108,3 +108,58 @@ jobs:
 
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
+
+  analytics:
+    name: Analytics (Spark tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: ecommerce_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ecommerce_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ci
+      POSTGRES_PASSWORD: ci-only-password
+      POSTGRES_TEST_DB: ecommerce_test
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js (for database migrations)
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Create the database schema
+        working-directory: backend
+        run: |
+          npm ci
+          node scripts/migrate.js up --test
+
+      - name: Build the analytics image
+        run: docker build -t ecommerce-analytics:ci analytics
+
+      - name: Lint, format check, and tests (inside the Spark image)
+        run: >-
+          docker run --rm --network host
+          -e POSTGRES_HOST -e POSTGRES_PORT -e POSTGRES_USER -e POSTGRES_PASSWORD -e POSTGRES_TEST_DB
+          -e PYTHONDONTWRITEBYTECODE=1
+          ecommerce-analytics:ci
+          sh -c "ruff check --no-cache . && ruff format --no-cache --check . && pytest -p no:cacheprovider"

@@ -339,6 +339,8 @@ Status of event publishing, read from the outbox table and component heartbeats.
 
 - `pending`: events not yet in Kafka. `oldestPendingAgeSeconds` is the publishing lag.
 - `failing`: pending events with at least one failed attempt; `lastError` is the latest error.
+- Components: `outbox-relay` and, once the Spark job has started, `spark-streaming` (its
+  `details` include `kafkaLag` and processing totals; see [analytics.md](analytics.md)).
 - Component `status`: `up`, `degraded` (reporting errors), `down` (no heartbeat for 30 s, or
   stopped), `unknown` (never reported).
 - Overall `status`:

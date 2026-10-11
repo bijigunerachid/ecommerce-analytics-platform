@@ -63,6 +63,60 @@ services:
       retries: 12
       start_period: 20s
 
+  # Spark Structured Streaming: Kafka → validation → Parquet history + PostgreSQL aggregates.
+  spark-streaming:
+    &analytics
+    build: ./analytics
+    image: ecommerce-analytics:dev
+    container_name: ecommerce-spark-streaming
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_TEST_DB: ${POSTGRES_TEST_DB:-ecommerce_test}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC_PREFIX: ${KAFKA_TOPIC_PREFIX:-ecommerce}
+    volumes:
+      # Parquet history, quarantine, and streaming checkpoints.
+      - analytics-data:/data
+    ports:
+      # Spark UI for the streaming job: http://localhost:4040
+      - "127.0.0.1:4040:4040"
+
+  # Batch job: rebuilds all aggregates from the Parquet history (run on demand).
+  #   docker compose stop spark-streaming
+  #   docker compose run --rm spark-rebuild
+  #   docker compose start spark-streaming
+  spark-rebuild:
+    <<: *analytics
+    container_name: ecommerce-spark-rebuild
+    restart: "no"
+    profiles: [batch]
+    ports: []
+    command: ["spark-submit", "--driver-memory", "1g", "bin/rebuild_aggregates.py"]
+
+  # Analytics test suite (uses the test database and a temporary data directory):
+  #   docker compose run --rm analytics-tests
+  analytics-tests:
+    <<: *analytics
+    container_name: ecommerce-analytics-tests
+    restart: "no"
+    profiles: [test]
+    ports: []
+    volumes:
+      # Mount the source so tests run against the working copy without rebuilding.
+      - ./analytics:/app
+    command: ["sh", "-c", "ruff check --no-cache . && ruff format --no-cache --check . && pytest -p no:cacheprovider"]
+
 volumes:
   postgres-data:
   kafka-data:
+  analytics-data:

@@ -8,6 +8,14 @@ export const TEST_PASSWORD = 'correct-horse-battery-staple';
 const TEST_BCRYPT_ROUNDS = 4; // minimum cost: keeps tests fast
 
 const TABLES = [
+  'analytics_anomalies',
+  'analytics_customers',
+  'analytics_inventory_daily',
+  'analytics_order_status',
+  'analytics_processed_events',
+  'analytics_product_daily',
+  'analytics_sales_hourly',
+  'analytics_stream_batches',
   'pipeline_heartbeats',
   'event_outbox',
   'stock_movements',

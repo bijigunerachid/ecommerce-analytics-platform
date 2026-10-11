@@ -68,11 +68,19 @@ ci: add backend test workflow
 
 `.github/workflows/ci.yml` runs on every pull request to `main` and every push to `main`:
 
-1. Starts a throwaway PostgreSQL 17 database
+**Backend job:**
+
+1. Starts throwaway PostgreSQL 17 and Kafka containers
 2. `npm ci`, then Prettier and ESLint checks
 3. Applies, fully reverts, and re-applies all migrations
 4. Runs the full test suite
 5. Audits production dependencies for known high-severity vulnerabilities
+
+**Analytics job:**
+
+1. Starts PostgreSQL and applies the backend migrations (they own the analytics tables)
+2. Builds the Spark image from `analytics/Dockerfile`
+3. Runs ruff (lint and format check) and pytest inside it
 
 You can also start it manually from the **Actions** tab (**Run workflow**).
 
@@ -83,8 +91,8 @@ Make CI mandatory so nothing reaches `main` without passing:
 1. Repository → **Settings** → **Branches** → **Add branch ruleset** (or **Add rule**).
 2. Target the `main` branch and enable:
    - **Require a pull request before merging**
-   - **Require status checks to pass**, adding the check **Backend (lint, format, tests)**
-     (it appears in the list after CI has run once)
+   - **Require status checks to pass**, adding **Backend (lint, format, tests)** and
+     **Analytics (Spark tests)** (checks appear in the list after they have run once)
    - **Block force pushes**
 3. Optionally, under **Settings → General → Pull Requests**, allow only **squash merging** and
    enable **Automatically delete head branches**.
