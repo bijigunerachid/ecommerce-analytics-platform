@@ -79,11 +79,11 @@ Copy-Item .env.example .env
 
 ## Getting started
 
-### 1. Start PostgreSQL
+### 1. Start PostgreSQL and Kafka
 
 ```powershell
-docker compose up -d postgres
-docker compose ps          # wait until STATUS shows "(healthy)"
+docker compose up -d postgres kafka
+docker compose ps          # wait until both show "(healthy)"; Kafka takes ~20 seconds
 ```
 
 On the first start the container also creates a separate `ecommerce_test` database that the
@@ -125,6 +125,21 @@ npm run dev                # restarts automatically when files change
 Check it at <http://localhost:4000/api/health>. The endpoints are documented in
 [docs/api.md](docs/api.md).
 
+### 5. Run the outbox relay (event publishing)
+
+In a **second terminal**, also from `backend/`:
+
+```powershell
+npm run relay
+```
+
+The relay publishes business events (orders, stock changes) from PostgreSQL to the Kafka topics
+`ecommerce.orders` and `ecommerce.inventory`, creating the topics on first start. It keeps
+running until you press Ctrl+C. If Kafka is down it keeps retrying, and no events are lost. See
+[docs/events.md](docs/events.md) for the event formats and delivery guarantees.
+
+Pipeline status is available at `GET /api/pipeline/health` (signed-in users).
+
 ### Backend commands (run from `backend/`)
 
 | Command                | What it does                                        |
@@ -132,10 +147,11 @@ Check it at <http://localhost:4000/api/health>. The endpoints are documented in
 | `npm run dev`          | Start the API with auto-reload                      |
 | `npm start`            | Start the API                                       |
 | `npm run create-admin` | Create an admin (or analyst) account                |
+| `npm run relay`        | Publish outbox events to Kafka (keeps running)      |
 | `npm run migrate:up`   | Apply all pending migrations                        |
 | `npm run migrate:down` | Revert the most recent migration                    |
 | `npm run migrate:test` | Apply migrations to the test database               |
-| `npm test`             | Run the automated tests (needs PostgreSQL running)  |
+| `npm test`             | Run the automated tests (needs PostgreSQL and Kafka) |
 | `npm run lint`         | ESLint                                              |
 | `npm run format:check` | Prettier check (`npm run format` to fix)            |
 

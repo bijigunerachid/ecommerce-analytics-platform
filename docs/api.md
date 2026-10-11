@@ -315,6 +315,37 @@ Filters: `productId`, `orderId`, `reason` (`order`, `restock`, `adjustment`, `ca
 
 See [events.md](events.md) for the events these operations emit.
 
+## Pipeline health
+
+### `GET /pipeline/health` (any signed-in user)
+
+Status of event publishing, read from the outbox table and component heartbeats.
+
+```json
+{
+  "status": "healthy",
+  "outbox": {
+    "pending": 0, "failing": 0, "oldestPendingAgeSeconds": null,
+    "lastPublishedAt": "...", "publishedLastHour": 128, "lastError": null
+  },
+  "components": [
+    { "component": "outbox-relay", "status": "up", "lastSeenAt": "...",
+      "details": { "status": "ok", "publishedTotal": 128, "consecutiveFailures": 0,
+                   "lastError": null, "lastPublishedAt": "..." } }
+  ],
+  "checkedAt": "..."
+}
+```
+
+- `pending`: events not yet in Kafka. `oldestPendingAgeSeconds` is the publishing lag.
+- `failing`: pending events with at least one failed attempt; `lastError` is the latest error.
+- Component `status`: `up`, `degraded` (reporting errors), `down` (no heartbeat for 30 s, or
+  stopped), `unknown` (never reported).
+- Overall `status`:
+  - `healthy`: relay up, no failures, nothing waiting longer than 60 s
+  - `degraded`: any of those conditions is not met
+  - `unhealthy`: relay down while events are waiting
+
 ## Security notes
 
 - Passwords are hashed with bcrypt (cost `BCRYPT_ROUNDS`, default 12).

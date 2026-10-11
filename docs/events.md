@@ -1,10 +1,55 @@
 # Business event contracts
 
 The backend records business events in the `event_outbox` table **in the same database transaction**
-as the change they describe. A relay (added in the Kafka step) publishes them to Kafka. An event
-therefore exists if and only if its change was committed.
+as the change they describe. The outbox relay (`npm run relay`) then publishes them to Kafka. An
+event therefore exists if and only if its change was committed.
 
-## Envelope
+## Kafka topics
+
+| Topic                 | Events                                         | Message key  | Partitions |
+| --------------------- | ---------------------------------------------- | ------------ | ---------- |
+| `ecommerce.orders`    | `order.created`, `order.status_changed`        | order id     | 3          |
+| `ecommerce.inventory` | `inventory.stock_changed`                      | product id   | 3          |
+
+The `ecommerce` prefix comes from `KAFKA_TOPIC_PREFIX`. Keying by entity id sends all events for
+one order (or product) to the same partition, so consumers see them in the order they happened.
+Topic auto-creation is disabled on the broker; the relay creates these topics on startup.
+
+### Message format
+
+The **value** is a JSON envelope:
+
+```json
+{
+  "eventId": "5b0c2f0e-6a3e-4a59-9a43-6f2b2f6c7f10",
+  "eventType": "order.created",
+  "schemaVersion": 1,
+  "aggregateType": "order",
+  "aggregateId": "42",
+  "occurredAt": "2026-10-10T20:15:00.000Z",
+  "payload": { "...": "event-specific body, see below" }
+}
+```
+
+**Headers:** `event_id`, `event_type`, `schema_version`, so consumers can route or filter without
+parsing the value. The Kafka **timestamp** is `occurredAt`.
+
+## Delivery guarantees
+
+- **At-least-once.** Events are marked published only after Kafka acknowledges them (`acks=all`,
+  idempotent producer). If the relay crashes after Kafka accepted a batch but before it recorded
+  that, the batch is sent again. **Consumers must deduplicate on `eventId`.**
+- **Ordered.** The relay publishes in outbox insertion order (`event_outbox.seq`). Only one relay
+  publishes at a time (a PostgreSQL advisory lock); extra relays wait as hot standbys. A failed
+  batch is retried before anything after it, so events are never reordered.
+- **No loss while Kafka is down.** Events stay in PostgreSQL. The relay retries with exponential
+  backoff (1 s, 2 s, 4 s, ... up to 30 s) and catches up when Kafka returns. Each failed attempt is
+  recorded on the event (`attempts`, `last_error`) and shows up in `GET /api/pipeline/health`.
+- An event that can never be published (e.g. larger than Kafka's message limit) would halt the
+  relay rather than be skipped, which keeps ordering intact. It is visible through
+  `last_error` in the health endpoint.
+
+## Outbox table
 
 Each outbox row has these columns:
 
@@ -16,6 +61,9 @@ Each outbox row has these columns:
 | `aggregate_id`   | id of the order/product, as a string (Kafka partition key)         |
 | `payload`        | JSON body described below                                          |
 | `occurred_at`    | When the event was recorded (transaction time, UTC)                |
+| `seq`            | Insertion order; the relay publishes in this order                 |
+| `published_at`   | When Kafka acknowledged it; `NULL` while pending                   |
+| `attempts`, `last_error` | Publish attempts and the most recent failure               |
 
 ## Conventions
 
