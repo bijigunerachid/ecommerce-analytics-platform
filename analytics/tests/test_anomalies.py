@@ -64,11 +64,12 @@ def test_order_velocity_flags_bursts_from_one_customer(handle, kafka_batch, conn
 
 
 def test_high_value_order_is_flagged_against_recent_history(handle, kafka_batch, conn):
+    # 200 ordinary orders between 40.00 and 59.00: the 99th percentile is 59.
     history = [
         order_created(
             i, 1000 + i, [(1, 1, 1, f"{40 + i % 20}.00")], NOW - timedelta(days=1, minutes=i)
         )
-        for i in range(30)
+        for i in range(200)
     ]
     handle(kafka_batch(history))
     assert anomalies(conn) == []
@@ -76,16 +77,16 @@ def test_high_value_order_is_flagged_against_recent_history(handle, kafka_batch,
     handle(
         kafka_batch(
             [
-                order_created(500, 7, [(1, 1, 1, "55.00")], NOW),  # ordinary
-                order_created(501, 8, [(1, 1, 50, "100.00")], NOW),  # 5000.00
+                order_created(500, 7, [(1, 1, 2, "55.00")], NOW),  # 110.00: about 2x p99, normal
+                order_created(501, 8, [(1, 1, 50, "100.00")], NOW),  # 5000.00: about 85x p99
             ]
         )
     )
-    flagged = anomalies(conn)
-    assert flagged == [("high_value_order", "high", "order", "501")]
+    assert anomalies(conn) == [("high_value_order", "high", "order", "501")]
     details = query(conn, "SELECT details FROM analytics_anomalies")[0][0]
     assert details["total"] == "5000.00"
-    assert details["zScore"] > 5
+    assert details["p99"] == 59
+    assert details["ratioToP99"] > 80
 
 
 def test_no_high_value_detection_without_enough_history(handle, kafka_batch, conn):
@@ -94,36 +95,50 @@ def test_no_high_value_detection_without_enough_history(handle, kafka_batch, con
     assert anomalies(conn) == []
 
 
-def test_hourly_revenue_spike_is_flagged(handle, kafka_batch, conn):
-    # Two days of ordinary hourly revenue (between 90 and 110 per hour).
+def seed_daily_revenue(conn, days=14):
+    """Two weeks of ordinary days, 900-1100 revenue each, before NOW's date."""
     conn.execute(
         """INSERT INTO analytics_sales_hourly (bucket_start, orders_count, gross_revenue)
-           SELECT %s - make_interval(hours => h), 2, 90 + (h %% 5) * 5
-           FROM generate_series(1, 48) h""",
-        (NOW,),
+           SELECT ((%s::timestamptz AT TIME ZONE 'UTC')::date - d + time '12:00')
+                    AT TIME ZONE 'UTC',
+                  10, 900 + (d %% 5) * 50
+           FROM generate_series(1, %s) d""",
+        (NOW, days),
     )
+
+
+def test_daily_revenue_spike_is_flagged(handle, kafka_batch, conn):
+    seed_daily_revenue(conn)
     spike = [
-        order_created(900 + i, 900 + i, [(1, 1, 1, "500.00")], NOW + timedelta(minutes=i))
+        order_created(900 + i, 900 + i, [(1, 1, 1, "750.00")], NOW + timedelta(minutes=i))
         for i in range(4)
     ]
-    handle(kafka_batch(spike))
-    # (The 500.00 orders may also be flagged as high-value orders; only the spike matters here.)
-    assert query(
+    handle(kafka_batch(spike))  # 3000.00 today vs. ~1000 per day before
+    rows = query(
         conn,
-        """SELECT entity_type, occurred_at = %s, severity FROM analytics_anomalies
-           WHERE anomaly_type = 'revenue_spike'""",
-        (NOW,),
-    ) == [("hour", True, "high")]
-
-
-def test_ordinary_hours_are_not_flagged_as_spikes(handle, kafka_batch, conn):
-    conn.execute(
-        """INSERT INTO analytics_sales_hourly (bucket_start, orders_count, gross_revenue)
-           SELECT %s - make_interval(hours => h), 2, 90 + (h %% 5) * 5
-           FROM generate_series(1, 48) h""",
-        (NOW,),
+        """SELECT entity_type, entity_id, occurred_at, severity, details
+           FROM analytics_anomalies WHERE anomaly_type = 'revenue_spike'""",
     )
-    handle(kafka_batch([order_created(1, 1, [(1, 1, 1, "105.00")], NOW)]))
+    assert len(rows) == 1
+    entity_type, entity_id, occurred_at, severity, details = rows[0]
+    assert entity_type == "day"
+    assert entity_id == NOW.date().isoformat()
+    assert occurred_at == datetime.combine(NOW.date(), datetime.min.time(), tzinfo=timezone.utc)
+    assert severity == "high"
+    assert details["daysCompared"] == 14
+
+
+def test_ordinary_days_are_not_flagged_as_spikes(handle, kafka_batch, conn):
+    seed_daily_revenue(conn)
+    handle(kafka_batch([order_created(1, 1, [(1, 1, 2, "500.00")], NOW)]))  # 1000.00 today
+    assert query(
+        conn, "SELECT count(*) FROM analytics_anomalies WHERE anomaly_type = 'revenue_spike'"
+    ) == [(0,)]
+
+
+def test_spike_detection_needs_a_week_of_history(handle, kafka_batch, conn):
+    seed_daily_revenue(conn, days=5)
+    handle(kafka_batch([order_created(1, 1, [(1, 1, 10, "500.00")], NOW)]))
     assert query(
         conn, "SELECT count(*) FROM analytics_anomalies WHERE anomaly_type = 'revenue_spike'"
     ) == [(0,)]

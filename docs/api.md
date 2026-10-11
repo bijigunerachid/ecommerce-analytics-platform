@@ -315,6 +315,64 @@ Filters: `productId`, `orderId`, `reason` (`order`, `restock`, `adjustment`, `ca
 
 See [events.md](events.md) for the events these operations emit.
 
+## Analytics (dashboard)
+
+Read-only endpoints for the dashboard, available to every signed-in user. They read the tables
+maintained by the Spark streaming job (see [analytics.md](analytics.md)), plus current stock
+levels for inventory. Nothing is hardcoded.
+
+**Common parameters:** `from`, `to` as `YYYY-MM-DD`, UTC, both inclusive. They default to the
+last 30 days ending today. The maximum range is 366 days. Every response includes `dataAsOf`:
+the time the streaming job last committed data (`null` before it first runs).
+
+Money values are decimal strings. Percentages (`change`, `share`, rates) are numbers with one
+decimal, e.g. `12.5` for 12.5%.
+
+| Endpoint | Extra parameters | Returns |
+| --- | --- | --- |
+| `GET /analytics/overview` | | KPIs for the range and the previous range of the same length, plus percentage `change` (`null` without a baseline) |
+| `GET /analytics/revenue` | `interval`: `hour` (ranges up to 31 days), `day`, `week`. Default: by range length | Zero-filled time series |
+| `GET /analytics/products/top` | `sortBy`: `revenue` (default) or `units`; `limit` 1–50 (default 10) | Best-selling products with revenue share |
+| `GET /analytics/categories` | | Revenue and units per category |
+| `GET /analytics/order-status` | (no range: current state) | Count and share for each of the 5 statuses |
+| `GET /analytics/customers` | `interval`: `day` or `week`; `limit` for top customers | New vs returning customers over time, repeat-purchase rate, top customers |
+| `GET /analytics/inventory` | `limit` 1–100 (default 20) | Stock flow per product, days of cover, low/out-of-stock counts; most urgent first |
+| `GET /analytics/anomalies` | `type`, `severity`, `page`, `pageSize` | Detected anomalies (newest first) with totals by type and severity |
+
+### Definitions
+
+- **Gross revenue**: value of all orders placed in the range.
+- **Net revenue**: gross minus orders later cancelled. A cancellation counts against the period
+  in which the order was **placed**.
+- **Orders**: orders placed. **Net orders**: orders minus cancellations.
+- **Average order value**: net revenue ÷ net orders.
+- **Cancellation rate**: cancelled ÷ placed, as a percentage.
+- **New customers**: customers whose first order falls in the range. **Active customers**: distinct
+  customers who ordered in the range. **Returning**: active minus new.
+- **Repeat purchase rate** (all time): customers with 2 or more orders ÷ customers with orders.
+- **Days of cover**: current stock ÷ average daily units out over the range (`null` if nothing
+  went out). **Sell-through rate**: units out ÷ (units out + current stock).
+
+### Example: `GET /analytics/overview?from=2026-03-01&to=2026-03-07`
+
+```json
+{
+  "range": { "from": "2026-03-01", "to": "2026-03-07", "days": 7 },
+  "previousRange": { "from": "2026-02-22", "to": "2026-02-28" },
+  "current": {
+    "netRevenue": "280.50", "grossRevenue": "310.50", "cancelledRevenue": "30.00",
+    "orders": 7, "cancelledOrders": 1, "netOrders": 6, "cancellationRate": 14.3,
+    "averageOrderValue": "46.75", "itemsSold": 11, "newCustomers": 2, "activeCustomers": 3
+  },
+  "previous": { "...": "same fields" },
+  "change": { "netRevenue": 250.6, "orders": 250, "averageOrderValue": 16.9, "...": "..." },
+  "dataAsOf": "2026-03-08T06:00:00.000Z"
+}
+```
+
+Revenue series buckets are UTC timestamps; weekly buckets start on Monday. Empty buckets are
+included with zeros, so charts have no gaps.
+
 ## Pipeline health
 
 ### `GET /pipeline/health` (any signed-in user)

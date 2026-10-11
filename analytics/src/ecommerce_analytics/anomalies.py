@@ -2,12 +2,16 @@
 
 Rules (thresholds are deliberately simple and documented in docs/analytics.md):
 
-- high_value_order: an order total more than 3 standard deviations above the mean order value
-  of the trailing 30 days (needs at least MIN_ORDERS_FOR_STATS orders of history).
+- high_value_order: an order total above HIGH_VALUE_MULTIPLE x the 99th percentile of order
+  totals over the trailing 30 days (needs MIN_ORDERS_FOR_STATS orders of history). Percentiles
+  are used rather than mean + k*stddev because order values are heavily skewed (cheap
+  accessories next to laptops): a z-score flagged ordinary multi-laptop orders.
 - order_velocity: a customer placing VELOCITY_MAX_ORDERS or more orders within a 10-minute
   window (possible bot, fraud, or duplicate submissions).
-- revenue_spike: an hour whose gross revenue is more than 3 standard deviations above the hourly
-  mean of the previous 7 days (needs MIN_HOURS_FOR_STATS hours with sales).
+- revenue_spike: a day whose gross revenue is more than 3 standard deviations above the mean of
+  the previous 14 days and at least 1.5x that mean (needs MIN_DAYS_FOR_STATS days with sales).
+  Daily totals are used because single hours are too noisy: one large order at night would
+  "spike" its hour.
 - large_stock_reduction: a manual adjustment removing at least 50% of a product's stock, or
   LARGE_ADJUSTMENT_UNITS units or more (possible shrinkage or data-entry error).
 
@@ -18,6 +22,7 @@ never duplicates an anomaly.
 from __future__ import annotations
 
 import json
+from datetime import datetime, time, timezone
 
 import psycopg
 from pyspark.sql import DataFrame
@@ -25,12 +30,14 @@ from pyspark.sql import functions as F
 
 from . import aggregations as agg
 
-MIN_ORDERS_FOR_STATS = 20
-ORDER_Z_THRESHOLD = 3.0
+MIN_ORDERS_FOR_STATS = 200
+HIGH_VALUE_MULTIPLE = 3.0
+HIGH_VALUE_SEVERE_MULTIPLE = 10.0
 VELOCITY_MAX_ORDERS = 5
 VELOCITY_WINDOW = "10 minutes"
-MIN_HOURS_FOR_STATS = 24
+MIN_DAYS_FOR_STATS = 7
 REVENUE_Z_THRESHOLD = 3.0
+REVENUE_MIN_RATIO = 1.5
 LARGE_ADJUSTMENT_UNITS = 100
 LARGE_ADJUSTMENT_SHARE = 0.5
 
@@ -51,40 +58,39 @@ def _insert(cur: psycopg.Cursor, rows: list[tuple]) -> int:
 
 
 def _high_value_orders(cur: psycopg.Cursor, events: DataFrame) -> list[tuple]:
+    # The 99th percentile needs a few hundred orders to be stable: with fewer, a single huge
+    # order lands at the 99th percentile itself and hides. MIN_ORDERS_FOR_STATS guards that.
     cur.execute(
-        """SELECT sum(orders_count), sum(gross_revenue), sum(order_total_sq_sum)
-           FROM analytics_sales_hourly
-           WHERE bucket_start >= now() - interval '30 days'"""
+        """SELECT count(*), percentile_cont(0.99) WITHIN GROUP (ORDER BY amount)
+           FROM analytics_processed_events
+           WHERE event_type = 'order.created' AND amount IS NOT NULL
+             AND occurred_at >= now() - interval '30 days'"""
     )
-    n, total, sq_sum = cur.fetchone()
-    if not n or n < MIN_ORDERS_FOR_STATS:
+    n, p99 = cur.fetchone()
+    if n < MIN_ORDERS_FOR_STATS or not p99:
         return []
-    mean = float(total) / n
-    variance = max(float(sq_sum) / n - mean * mean, 0.0)
-    std = variance**0.5
-    if std == 0:
-        return []
-    threshold = mean + ORDER_Z_THRESHOLD * std
+    p99 = float(p99)
+    threshold = HIGH_VALUE_MULTIPLE * p99
 
     rows = []
     for o in agg.orders(events).filter(F.col("total") > threshold).collect():
-        z = (float(o.total) - mean) / std
+        ratio = float(o.total) / p99
         rows.append(
             (
                 "high_value_order",
-                "high" if z >= 5 else "medium",
+                "high" if ratio >= HIGH_VALUE_SEVERE_MULTIPLE else "medium",
                 "order",
                 str(o.order_id),
                 o.occurred_at,
-                f"Order total {o.total} is {z:.1f} standard deviations above the 30-day mean",
+                f"Order total {o.total} is {ratio:.1f}x the 99th percentile of the last 30 days",
                 json.dumps(
                     {
                         "orderId": o.order_id,
                         "customerId": o.customer_id,
                         "total": str(o.total),
-                        "mean": round(mean, 2),
-                        "stddev": round(std, 2),
-                        "zScore": round(z, 2),
+                        "p99": round(p99, 2),
+                        "ratioToP99": round(ratio, 2),
+                        "ordersCompared": n,
                     }
                 ),
             )
@@ -126,43 +132,48 @@ def _order_velocity(cur: psycopg.Cursor, events: DataFrame) -> list[tuple]:
 
 
 def _revenue_spikes(cur: psycopg.Cursor, events: DataFrame) -> list[tuple]:
-    hours = [r.bucket_start for r in agg.sales_hourly(events).select("bucket_start").collect()]
-    if not hours:
+    days = sorted(
+        {r.bucket_start.date() for r in agg.sales_hourly(events).select("bucket_start").collect()}
+    )
+    if not days:
         return []
     cur.execute(
-        """SELECT h.bucket_start, h.gross_revenue, s.mean, s.stddev, s.hours
-           FROM analytics_sales_hourly h
+        """WITH daily AS (
+             SELECT (bucket_start AT TIME ZONE 'UTC')::date AS day, sum(gross_revenue) AS revenue
+             FROM analytics_sales_hourly
+             GROUP BY 1
+           )
+           SELECT t.day, t.revenue, s.mean, s.stddev, s.days
+           FROM daily t
            CROSS JOIN LATERAL (
-             SELECT avg(p.gross_revenue) AS mean, stddev_pop(p.gross_revenue) AS stddev,
-                    count(*) AS hours
-             FROM analytics_sales_hourly p
-             WHERE p.bucket_start >= h.bucket_start - interval '7 days'
-               AND p.bucket_start < h.bucket_start
-               AND p.orders_count > 0
+             SELECT avg(p.revenue) AS mean, stddev_pop(p.revenue) AS stddev, count(*) AS days
+             FROM daily p
+             WHERE p.day >= t.day - 14 AND p.day < t.day AND p.revenue > 0
            ) s
-           WHERE h.bucket_start = ANY(%s)
-             AND s.hours >= %s AND s.stddev > 0
-             AND h.gross_revenue > s.mean + %s * s.stddev""",
-        (hours, MIN_HOURS_FOR_STATS, REVENUE_Z_THRESHOLD),
+           WHERE t.day = ANY(%s)
+             AND s.days >= %s AND s.stddev > 0
+             AND t.revenue > s.mean + %s * s.stddev
+             AND t.revenue >= %s * s.mean""",
+        (days, MIN_DAYS_FOR_STATS, REVENUE_Z_THRESHOLD, REVENUE_MIN_RATIO),
     )
     rows = []
-    for bucket_start, revenue, mean, std, n_hours in cur.fetchall():
+    for day, revenue, mean, std, n_days in cur.fetchall():
         z = float((revenue - mean) / std)
         rows.append(
             (
                 "revenue_spike",
                 "high" if z >= 5 else "medium",
-                "hour",
-                bucket_start.isoformat(),
-                bucket_start,
-                f"Hourly revenue {revenue} is {z:.1f} standard deviations above the 7-day mean",
+                "day",
+                day.isoformat(),
+                datetime.combine(day, time.min, tzinfo=timezone.utc),
+                f"Daily revenue {revenue} is {z:.1f} standard deviations above the 14-day mean",
                 json.dumps(
                     {
                         "revenue": str(revenue),
                         "mean": str(round(mean, 2)),
                         "stddev": str(round(std, 2)),
                         "zScore": round(z, 2),
-                        "hoursCompared": n_hours,
+                        "daysCompared": n_days,
                     }
                 ),
             )
