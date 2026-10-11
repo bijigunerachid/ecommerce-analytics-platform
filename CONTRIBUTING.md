@@ -76,6 +76,12 @@ ci: add backend test workflow
 4. Runs the full test suite
 5. Audits production dependencies for known high-severity vulnerabilities
 
+**Frontend job:**
+
+1. `npm ci`, Prettier and ESLint checks
+2. Vitest + Testing Library tests (API mocked with MSW)
+3. Production build and dependency audit
+
 **Analytics job:**
 
 1. Starts PostgreSQL and applies the backend migrations (they own the analytics tables)
@@ -91,8 +97,8 @@ Make CI mandatory so nothing reaches `main` without passing:
 1. Repository → **Settings** → **Branches** → **Add branch ruleset** (or **Add rule**).
 2. Target the `main` branch and enable:
    - **Require a pull request before merging**
-   - **Require status checks to pass**, adding **Backend (lint, format, tests)** and
-     **Analytics (Spark tests)** (checks appear in the list after they have run once)
+   - **Require status checks to pass**, adding **Backend (lint, format, tests)**,
+     **Analytics (Spark tests)**, and **Frontend (lint, format, tests, build)** (checks appear in the list after they have run once)
    - **Block force pushes**
 3. Optionally, under **Settings → General → Pull Requests**, allow only **squash merging** and
    enable **Automatically delete head branches**.

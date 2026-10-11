@@ -28,7 +28,9 @@ A full-stack e-commerce operations app with a streaming analytics pipeline.
                                                            Parquet history + quarantine
 ```
 
-The frontend is not built yet.
+![Analytics dashboard](docs/screenshots/02-dashboard-light.png)
+
+More screenshots (dark mode, mobile) are in [docs/frontend.md](docs/frontend.md).
 
 ## Repository layout
 
@@ -166,7 +168,20 @@ running until you press Ctrl+C. If Kafka is down it keeps retrying, and no event
 
 Pipeline status is available at `GET /api/pipeline/health` (signed-in users).
 
-### 6. Run the Spark analytics pipeline
+### 6. Run the frontend
+
+In another terminal:
+
+```powershell
+cd frontend
+npm install
+npm run dev               # http://localhost:5173 (proxies /api to the backend)
+```
+
+Sign in with the admin account from step 3. See [docs/frontend.md](docs/frontend.md) for the
+structure, design decisions, and configuration.
+
+### 7. Run the Spark analytics pipeline
 
 ```powershell
 docker compose up -d spark-streaming      # first run builds the image (~1 GB, a few minutes)
@@ -219,8 +234,8 @@ docker compose up -d postgres
 
 ## Contributing and CI
 
-Every change goes through a feature branch and a pull request. GitHub Actions runs two jobs on each
-pull request: backend (format, lint, migrations, tests with PostgreSQL and Kafka) and analytics
-(ruff and pytest inside the Spark image). See
+Every change goes through a feature branch and a pull request. GitHub Actions runs three jobs on each
+pull request: backend (format, lint, migrations, tests with PostgreSQL and Kafka), analytics
+(ruff and pytest inside the Spark image), and frontend (format, lint, tests, production build). See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the branch naming, commit conventions, and how to protect
 `main`.
