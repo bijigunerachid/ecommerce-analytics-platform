@@ -11,6 +11,7 @@
     "dev": "node --env-file-if-exists=../.env --watch src/server.js",
     "start": "node --env-file-if-exists=../.env src/server.js",
     "relay": "node --env-file-if-exists=../.env src/workers/outbox-relay.js",
+    "generate-data": "node --env-file-if-exists=../.env scripts/generate-sample-data.js",
     "create-admin": "node --env-file-if-exists=../.env scripts/create-admin.js",
     "migrate:up": "node --env-file-if-exists=../.env scripts/migrate.js up",
     "migrate:down": "node --env-file-if-exists=../.env scripts/migrate.js down",

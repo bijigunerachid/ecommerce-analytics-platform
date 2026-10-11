@@ -122,6 +122,26 @@ node --env-file=../.env scripts/create-admin.js --email admin@example.com --name
 # add --role analyst to create an analyst
 ```
 
+### Optional: load realistic sample data
+
+To see the dashboard with months of history, generate a synthetic dataset **into an empty
+database** (no products yet). It takes about 2 minutes:
+
+```powershell
+npm run generate-data      # 90 days, ~60 orders/day (growing), fixed seed: same data every time
+```
+
+The generator writes orders, inventory movements, and business events the same way the app does,
+spread over the past 90 days. It uses busier weekends, a daily traffic curve, popular and niche
+products, returning customers, cancellations, restocks, and a few planted anomalies. All
+customers are fictional (`@example.com`); the catalog is in
+[data/samples/catalog.json](data/samples/catalog.json). Once the relay (step 5) and Spark (step 6)
+are running, the history flows into the dashboard analytics within about a minute.
+
+Other sizes: `node --env-file=../.env scripts/generate-sample-data.js --days 30 --orders-per-day 100 --seed 7`.
+To start over: `docker compose down -v` (deletes all data), then `docker compose up -d postgres kafka`
+and `npm run migrate:up`.
+
 ### 4. Run the API
 
 ```powershell
@@ -172,6 +192,7 @@ and the batch rebuild job.
 | `npm start`            | Start the API                                       |
 | `npm run create-admin` | Create an admin (or analyst) account                |
 | `npm run relay`        | Publish outbox events to Kafka (keeps running)      |
+| `npm run generate-data` | Load 90 days of synthetic history (empty DB only)  |
 | `npm run migrate:up`   | Apply all pending migrations                        |
 | `npm run migrate:down` | Revert the most recent migration                    |
 | `npm run migrate:test` | Apply migrations to the test database               |
@@ -186,7 +207,8 @@ npx vitest run tests/integration/schema.test.js
 npx vitest run -t "rejects negative stock"
 ```
 
-See [docs/database.md](docs/database.md) for the schema design.
+See [docs/database.md](docs/database.md) for the schema design and [docs/api.md](docs/api.md)
+for every endpoint, including the dashboard analytics (`/api/analytics/*`).
 
 ### Resetting the database
 

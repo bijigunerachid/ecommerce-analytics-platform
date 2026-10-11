@@ -1,0 +1,93 @@
+{
+  "description": "Synthetic product catalog used by the sample data generator (backend/scripts/generate-sample-data.js). All products are fictional.",
+  "categories": [
+    {
+      "name": "Electronics",
+      "description": "Computers, phones, and accessories",
+      "products": [
+        { "sku": "ELC-LAPTOP-14", "name": "Aurora 14\" Laptop", "price": "1299.00", "popularity": 4, "initialStock": 40, "reorderLevel": 8 },
+        { "sku": "ELC-PHONE-X", "name": "Nimbus X Smartphone", "price": "849.00", "popularity": 6, "initialStock": 60, "reorderLevel": 12 },
+        { "sku": "ELC-TABLET-10", "name": "Slate 10 Tablet", "price": "429.00", "popularity": 4, "initialStock": 50, "reorderLevel": 10 },
+        { "sku": "ELC-CHARGER-65", "name": "65W USB-C Charger", "price": "39.90", "popularity": 14, "initialStock": 300, "reorderLevel": 40 },
+        { "sku": "ELC-MOUSE-WL", "name": "Wireless Mouse", "price": "24.50", "popularity": 16, "initialStock": 300, "reorderLevel": 40 },
+        { "sku": "ELC-KEYBOARD-MX", "name": "Mechanical Keyboard", "price": "89.00", "popularity": 8, "initialStock": 120, "reorderLevel": 20 }
+      ]
+    },
+    {
+      "name": "Audio",
+      "description": "Headphones, speakers, and microphones",
+      "products": [
+        { "sku": "AUD-HEADPHONE-NC", "name": "Noise-Cancelling Headphones", "price": "249.00", "popularity": 9, "initialStock": 100, "reorderLevel": 15 },
+        { "sku": "AUD-EARBUDS", "name": "True Wireless Earbuds", "price": "119.00", "popularity": 12, "initialStock": 200, "reorderLevel": 30 },
+        { "sku": "AUD-SPEAKER-MINI", "name": "Mini Bluetooth Speaker", "price": "49.90", "popularity": 10, "initialStock": 180, "reorderLevel": 25 },
+        { "sku": "AUD-SOUNDBAR", "name": "Home Soundbar", "price": "329.00", "popularity": 3, "initialStock": 40, "reorderLevel": 6 },
+        { "sku": "AUD-MIC-USB", "name": "USB Podcast Microphone", "price": "129.00", "popularity": 4, "initialStock": 60, "reorderLevel": 10 }
+      ]
+    },
+    {
+      "name": "Home & Kitchen",
+      "description": "Appliances and kitchenware",
+      "products": [
+        { "sku": "HOM-COFFEE-DRIP", "name": "Drip Coffee Maker", "price": "79.00", "popularity": 7, "initialStock": 90, "reorderLevel": 15 },
+        { "sku": "HOM-KETTLE", "name": "Electric Kettle", "price": "34.90", "popularity": 9, "initialStock": 150, "reorderLevel": 25 },
+        { "sku": "HOM-BLENDER", "name": "High-Speed Blender", "price": "119.00", "popularity": 5, "initialStock": 70, "reorderLevel": 10 },
+        { "sku": "HOM-KNIFE-SET", "name": "Chef Knife Set", "price": "149.00", "popularity": 4, "initialStock": 60, "reorderLevel": 10 },
+        { "sku": "HOM-PAN-28", "name": "Non-Stick Pan 28cm", "price": "42.00", "popularity": 8, "initialStock": 140, "reorderLevel": 20 },
+        { "sku": "HOM-MUGS-4", "name": "Ceramic Mug Set (4)", "price": "24.00", "popularity": 10, "initialStock": 200, "reorderLevel": 30 }
+      ]
+    },
+    {
+      "name": "Books",
+      "description": "Fiction and non-fiction",
+      "products": [
+        { "sku": "BKS-DATA-ENG", "name": "Practical Data Engineering", "price": "45.00", "popularity": 7, "initialStock": 120, "reorderLevel": 20 },
+        { "sku": "BKS-NOVEL-RIVER", "name": "The River Between (Novel)", "price": "16.99", "popularity": 11, "initialStock": 250, "reorderLevel": 40 },
+        { "sku": "BKS-COOKBOOK", "name": "Weeknight Cookbook", "price": "29.50", "popularity": 6, "initialStock": 120, "reorderLevel": 20 },
+        { "sku": "BKS-HISTORY", "name": "A Short History of Trade", "price": "22.00", "popularity": 4, "initialStock": 100, "reorderLevel": 15 },
+        { "sku": "BKS-KIDS-ATLAS", "name": "Children's World Atlas", "price": "19.90", "popularity": 5, "initialStock": 100, "reorderLevel": 15 }
+      ]
+    },
+    {
+      "name": "Sports & Outdoors",
+      "description": "Fitness and outdoor gear",
+      "products": [
+        { "sku": "SPT-YOGA-MAT", "name": "Yoga Mat", "price": "29.00", "popularity": 9, "initialStock": 160, "reorderLevel": 25 },
+        { "sku": "SPT-DUMBBELLS", "name": "Adjustable Dumbbells", "price": "199.00", "popularity": 4, "initialStock": 50, "reorderLevel": 8 },
+        { "sku": "SPT-BOTTLE", "name": "Insulated Water Bottle", "price": "21.50", "popularity": 13, "initialStock": 250, "reorderLevel": 40 },
+        { "sku": "SPT-TENT-2P", "name": "2-Person Tent", "price": "159.00", "popularity": 3, "initialStock": 40, "reorderLevel": 6 },
+        { "sku": "SPT-RUN-SHOES", "name": "Trail Running Shoes", "price": "119.00", "popularity": 7, "initialStock": 90, "reorderLevel": 15 },
+        { "sku": "SPT-BACKPACK", "name": "Hiking Backpack 30L", "price": "89.00", "popularity": 5, "initialStock": 70, "reorderLevel": 10 }
+      ]
+    },
+    {
+      "name": "Fashion",
+      "description": "Clothing and accessories",
+      "products": [
+        { "sku": "FSH-TSHIRT", "name": "Organic Cotton T-Shirt", "price": "19.00", "popularity": 14, "initialStock": 300, "reorderLevel": 50 },
+        { "sku": "FSH-HOODIE", "name": "Zip Hoodie", "price": "54.00", "popularity": 8, "initialStock": 150, "reorderLevel": 25 },
+        { "sku": "FSH-JEANS", "name": "Slim Fit Jeans", "price": "69.00", "popularity": 7, "initialStock": 120, "reorderLevel": 20 },
+        { "sku": "FSH-SUNGLASSES", "name": "Polarized Sunglasses", "price": "59.00", "popularity": 5, "initialStock": 90, "reorderLevel": 15 },
+        { "sku": "FSH-WATCH", "name": "Minimalist Watch", "price": "139.00", "popularity": 3, "initialStock": 50, "reorderLevel": 8 },
+        { "sku": "FSH-BEANIE", "name": "Wool Beanie", "price": "17.50", "popularity": 6, "initialStock": 150, "reorderLevel": 25 }
+      ]
+    }
+  ],
+  "firstNames": ["Amara", "Liam", "Sofia", "Noah", "Yuki", "Mateo", "Leila", "Ethan", "Zara", "Lucas", "Nadia", "Omar", "Chloe", "Ivan", "Priya", "Hugo", "Elena", "Kofi", "Mia", "Diego", "Aisha", "Felix", "Hana", "Samuel", "Ines", "Rahul", "Clara", "Tomas", "Nora", "Yusuf", "Lina", "Arjun", "Emma", "Karim", "Julia", "Mohamed", "Sara", "Leo", "Fatima", "Oscar"],
+  "lastNames": ["Benali", "Smith", "Rossi", "Tanaka", "Garcia", "Haddad", "Novak", "Okafor", "Martin", "Silva", "Kowalski", "Nguyen", "Dubois", "Schmidt", "Patel", "Andersen", "Moreau", "Costa", "Alami", "Fischer", "Lopez", "Ivanova", "Kim", "Jensen", "Mensah", "Bianchi", "Ahmed", "Larsen", "Romero", "Yilmaz"],
+  "locations": [
+    { "city": "Casablanca", "country": "Morocco" },
+    { "city": "Rabat", "country": "Morocco" },
+    { "city": "Paris", "country": "France" },
+    { "city": "Lyon", "country": "France" },
+    { "city": "Madrid", "country": "Spain" },
+    { "city": "Barcelona", "country": "Spain" },
+    { "city": "Berlin", "country": "Germany" },
+    { "city": "Amsterdam", "country": "Netherlands" },
+    { "city": "London", "country": "United Kingdom" },
+    { "city": "Milan", "country": "Italy" },
+    { "city": "Lisbon", "country": "Portugal" },
+    { "city": "Brussels", "country": "Belgium" },
+    { "city": "Montreal", "country": "Canada" },
+    { "city": "New York", "country": "United States" }
+  ]
+}

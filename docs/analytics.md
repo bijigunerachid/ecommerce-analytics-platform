@@ -119,13 +119,27 @@ anomalies are unique on `(type, entity, time)`.
 
 | Type | Rule | Severity |
 | --- | --- | --- |
-| `high_value_order` | Order total more than 3 standard deviations above the trailing 30-day mean order value. Needs at least 20 orders of history. | high at z ≥ 5, otherwise medium |
+| `high_value_order` | Order total above 3× the 99th percentile of order totals in the last 30 days. Needs at least 200 orders of history. | high at 10× or more, otherwise medium |
 | `order_velocity` | A customer places 5 or more orders within one 10-minute window | high at 10 or more |
-| `revenue_spike` | An hour's gross revenue is more than 3 standard deviations above the hourly mean of the previous 7 days. Needs at least 24 hours with sales. | high at z ≥ 5 |
+| `revenue_spike` | A day's gross revenue is more than 3 standard deviations above the mean of the previous 14 days, and at least 1.5× that mean. Needs at least 7 days with sales. | high at z ≥ 5, otherwise medium |
 | `large_stock_reduction` | A manual adjustment removes at least 50% of a product's stock, or 100 units or more | high at 80% or more |
 
-The order-value statistics come from `analytics_sales_hourly` (`order_total_sq_sum` stores the
-sum of squared order totals), so no extra history scan is needed.
+### Why these thresholds
+
+The first version used z-scores (mean + 3 standard deviations) for order values and hourly revenue.
+On 90 days of generated data (5,733 orders) it raised **122 alerts**, almost all false:
+
+- Order values are heavily skewed (€25 accessories next to €1,299 laptops), so the standard
+  deviation says little about what is unusual, and any multi-laptop order looked like an outlier.
+  A percentile threshold does not assume a bell curve. On the same data, 3× the 99th percentile
+  flags exactly one order: the planted €32,475 order.
+- Single hours are too noisy: one laptop sold at 3 a.m. "spikes" its hour. Daily totals are
+  stable enough for a z-score.
+- A percentile needs enough data. With 61 orders, a single €5,000 order moved the 99th
+  percentile from 59 to 2,035 and hid itself, hence the 200-order minimum.
+
+With the current rules the same history produces **7 alerts**: the three planted anomalies, the
+revenue spike on the day of the planted order, and three medium spikes on unusually busy days.
 
 ## Health and lag
 

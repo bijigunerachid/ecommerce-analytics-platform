@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import { createAnalyticsController } from './controllers/analytics.controller.js';
 import { createAuthController } from './controllers/auth.controller.js';
 import { createCategoriesController } from './controllers/categories.controller.js';
 import { createCustomersController } from './controllers/customers.controller.js';
@@ -13,6 +14,7 @@ import { createProductsController } from './controllers/products.controller.js';
 import { createUsersController } from './controllers/users.controller.js';
 import { requireAuth } from './middleware/auth.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
+import { createAnalyticsRepository } from './repositories/analytics.repository.js';
 import { createCategoriesRepository } from './repositories/categories.repository.js';
 import { createCustomersRepository } from './repositories/customers.repository.js';
 import { createOrdersRepository } from './repositories/orders.repository.js';
@@ -21,12 +23,14 @@ import { createPipelineRepository } from './repositories/pipeline.repository.js'
 import { createProductsRepository } from './repositories/products.repository.js';
 import { createStockMovementsRepository } from './repositories/stock-movements.repository.js';
 import { createUsersRepository } from './repositories/users.repository.js';
+import { createAnalyticsRouter } from './routes/analytics.routes.js';
 import { createAuthRouter } from './routes/auth.routes.js';
 import { createCrudRouter } from './routes/crud.routes.js';
 import { createInventoryRouter } from './routes/inventory.routes.js';
 import { createPipelineRouter } from './routes/pipeline.routes.js';
 import { createOrdersRouter } from './routes/orders.routes.js';
 import { createUsersRouter } from './routes/users.routes.js';
+import { createAnalyticsService } from './services/analytics.service.js';
 import { createAuthService } from './services/auth.service.js';
 import { createCategoriesService } from './services/categories.service.js';
 import { createCustomersService } from './services/customers.service.js';
@@ -91,6 +95,11 @@ export function createApp({ db, config }) {
   const customersController = createCustomersController({ customersService });
   const ordersController = createOrdersController({ ordersService });
   const inventoryController = createInventoryController({ inventoryService });
+  const analyticsController = createAnalyticsController({
+    analyticsService: createAnalyticsService({
+      analyticsRepository: createAnalyticsRepository(db),
+    }),
+  });
   const pipelineController = createPipelineController({
     pipelineService: createPipelineService({ pipelineRepository: createPipelineRepository(db) }),
   });
@@ -160,6 +169,7 @@ export function createApp({ db, config }) {
   api.use('/orders', createOrdersRouter({ ordersController, requireAuth: authenticate }));
   api.use('/inventory', createInventoryRouter({ inventoryController, requireAuth: authenticate }));
   api.use('/pipeline', createPipelineRouter({ pipelineController, requireAuth: authenticate }));
+  api.use('/analytics', createAnalyticsRouter({ analyticsController, requireAuth: authenticate }));
   app.use('/api', api);
 
   app.use(notFoundHandler);
