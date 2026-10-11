@@ -16,6 +16,7 @@ const CORE_TABLES = [
   'event_outbox',
   'order_items',
   'orders',
+  'pipeline_heartbeats',
   'products',
   'stock_movements',
   'users',
