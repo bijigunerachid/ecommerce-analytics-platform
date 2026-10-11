@@ -1,11 +1,17 @@
 import {
+  Boxes,
   ChartNoAxesCombined,
   LayoutDashboard,
   LogOut,
   Menu,
   Monitor,
   Moon,
+  Package,
+  ReceiptText,
   Sun,
+  Tags,
+  UserCog,
+  Users,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -15,7 +21,15 @@ import { Button } from '../components/ui/Button.jsx';
 import { SegmentedControl } from '../components/ui/SegmentedControl.jsx';
 import { useTheme } from '../theme/ThemeContext.js';
 
-const NAV_ITEMS = [{ to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true }];
+const NAV_ITEMS = [
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/orders', label: 'Orders', icon: ReceiptText },
+  { to: '/products', label: 'Products', icon: Package },
+  { to: '/categories', label: 'Categories', icon: Tags },
+  { to: '/customers', label: 'Customers', icon: Users },
+  { to: '/inventory', label: 'Inventory', icon: Boxes },
+  { to: '/users', label: 'Users', icon: UserCog, adminOnly: true },
+];
 
 function Brand() {
   return (
@@ -29,9 +43,11 @@ function Brand() {
 }
 
 function Navigation({ onNavigate }) {
+  const { user } = useAuth();
+  const items = NAV_ITEMS.filter((item) => !item.adminOnly || user?.role === 'admin');
   return (
     <nav aria-label="Main" className="space-y-1">
-      {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+      {items.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
           to={to}

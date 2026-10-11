@@ -250,3 +250,143 @@ export const pipelineHealth = {
   ],
   checkedAt: '2026-03-11T10:00:00.000Z',
 };
+
+// ---- Management resources ----
+const page = (data) => ({
+  data,
+  pagination: { page: 1, pageSize: 20, total: data.length, totalPages: 1 },
+});
+
+export const analystUser = {
+  ...adminUser,
+  id: 2,
+  email: 'analyst@example.test',
+  fullName: 'Ana Lyst',
+  role: 'analyst',
+};
+
+export const categoriesList = page([
+  {
+    id: 1,
+    name: 'Electronics',
+    description: 'Computers and phones',
+    productCount: 6,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 2,
+    name: 'Audio',
+    description: null,
+    productCount: 0,
+    createdAt: '2026-01-02T00:00:00.000Z',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+  },
+]);
+
+export const laptop = {
+  id: 10,
+  sku: 'ELC-LAPTOP-14',
+  name: 'Aurora 14" Laptop',
+  description: null,
+  categoryId: 1,
+  categoryName: 'Electronics',
+  price: '1299.00',
+  stockQuantity: 3,
+  reorderLevel: 8,
+  isLowStock: true,
+  isActive: true,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+};
+export const mouse = {
+  ...laptop,
+  id: 11,
+  sku: 'ELC-MOUSE-WL',
+  name: 'Wireless Mouse',
+  price: '24.50',
+  stockQuantity: 120,
+  reorderLevel: 40,
+  isLowStock: false,
+};
+export const productsList = page([laptop, mouse]);
+
+export const customer = {
+  id: 5,
+  email: 'alice@example.com',
+  firstName: 'Alice',
+  lastName: 'Martin',
+  phone: null,
+  city: 'Lyon',
+  country: 'France',
+  orderCount: 2,
+  totalSpent: '1348.00',
+  lastOrderAt: '2026-03-01T10:00:00.000Z',
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+};
+export const customersList = page([customer]);
+
+export const order = {
+  id: 42,
+  customerId: 5,
+  customerName: 'Alice Martin',
+  customerEmail: 'alice@example.com',
+  status: 'pending',
+  totalAmount: '1348.00',
+  itemCount: 2,
+  createdBy: 1,
+  createdAt: '2026-03-01T10:00:00.000Z',
+  updatedAt: '2026-03-01T10:00:00.000Z',
+  items: [
+    {
+      productId: 10,
+      sku: 'ELC-LAPTOP-14',
+      productName: 'Aurora 14" Laptop',
+      categoryId: 1,
+      quantity: 1,
+      unitPrice: '1299.00',
+      lineTotal: '1299.00',
+    },
+    {
+      productId: 11,
+      sku: 'ELC-MOUSE-WL',
+      productName: 'Wireless Mouse',
+      categoryId: 1,
+      quantity: 2,
+      unitPrice: '24.50',
+      lineTotal: '49.00',
+    },
+  ],
+};
+const { items: _items, ...orderSummary } = order;
+export const ordersList = page([orderSummary]);
+
+export const movementsList = page([
+  {
+    id: 1,
+    productId: 10,
+    sku: 'ELC-LAPTOP-14',
+    productName: 'Aurora 14" Laptop',
+    quantityChange: -1,
+    reason: 'order',
+    orderId: 42,
+    note: null,
+    createdBy: 1,
+    createdAt: '2026-03-01T10:00:00.000Z',
+  },
+  {
+    id: 2,
+    productId: 11,
+    sku: 'ELC-MOUSE-WL',
+    productName: 'Wireless Mouse',
+    quantityChange: 50,
+    reason: 'restock',
+    orderId: null,
+    note: 'Supplier delivery',
+    createdBy: 1,
+    createdAt: '2026-02-28T09:00:00.000Z',
+  },
+]);
+
+export const usersList = { users: [adminUser, analystUser] };
