@@ -30,7 +30,8 @@ A full-stack e-commerce operations app with a streaming analytics pipeline.
 
 ![Analytics dashboard](docs/screenshots/02-dashboard-light.png)
 
-More screenshots (dark mode, mobile) are in [docs/frontend.md](docs/frontend.md).
+More screenshots (dark mode, mobile, orders, inventory, forms) are in
+[docs/frontend.md](docs/frontend.md).
 
 ## Repository layout
 
@@ -178,7 +179,8 @@ npm install
 npm run dev               # http://localhost:5173 (proxies /api to the backend)
 ```
 
-Sign in with the admin account from step 3. See [docs/frontend.md](docs/frontend.md) for the
+Sign in with the admin account from step 3. Besides the dashboard, the app manages orders
+(including placing new ones), products, categories, customers, inventory, and staff accounts. See [docs/frontend.md](docs/frontend.md) for the
 structure, design decisions, and configuration.
 
 ### 7. Run the Spark analytics pipeline

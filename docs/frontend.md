@@ -27,6 +27,44 @@ backend** (port from `API_PORT` in the root `.env`, default 4000; override with
 | `npm run preview` | Serve the production build (also proxies `/api`) |
 | `npm run lint` / `npm run format:check` | ESLint (incl. React Hooks rules) / Prettier |
 
+## Pages
+
+| Page | Who | What |
+| --- | --- | --- |
+| Dashboard `/` | everyone | KPIs, charts, inventory watchlist, anomalies, pipeline health |
+| Orders `/orders` | everyone | Search by customer, email or order number; filter by status, dates, customer |
+| Order `/orders/:id` | everyone; admins change status | Line items and totals. Only the allowed next statuses are offered; cancelling (which restocks) asks for confirmation |
+| New order `/orders/new` | admin | Search-as-you-type customer and product pickers, quantities, live estimate |
+| Products `/products` | everyone; admins edit | Search name/SKU; filter by category, status, low stock; create, edit, delete |
+| Categories `/categories` | everyone; admins edit | Product counts; create, edit, delete |
+| Customers `/customers` | everyone; admins edit | Order count and total spent; link to their orders |
+| Inventory `/inventory` | everyone; admins adjust | The stock ledger with links to orders; restock and adjustment form |
+| Users `/users` | admin | Staff accounts; create admins and analysts |
+
+Admin-only controls are hidden from analysts and admin-only routes redirect them. This is for
+clarity only: the API enforces every permission.
+
+### Forms and errors
+
+- **Two layers of validation:** client-side checks mirror the API's rules for instant feedback,
+  and the API's `VALIDATION_ERROR` details are mapped back onto the matching fields.
+- **Conflicts** (duplicate SKU or email, deleting something still in use) appear in a banner
+  inside the form or confirmation dialog, which stays open so nothing is lost.
+- **Successful actions** show a short notification.
+
+### Idempotent orders and adjustments
+
+New orders and stock adjustments send an `Idempotency-Key` header:
+
+- The key is created when the form opens and kept for retries. If a request fails with a network
+  error, the order may or may not have been placed. Pressing the button again with the same data
+  is safe, because the server returns the original order instead of creating a second one or
+  deducting stock twice.
+- Changing the order (customer, products, quantities) creates a new key, since it is a different
+  request.
+- If stock runs out, the API's `INSUFFICIENT_STOCK` details highlight each affected line with
+  the quantity still available.
+
 ## Structure
 
 ```
@@ -34,11 +72,14 @@ src/
   api/          fetch wrapper (cookies, errors → ApiError, 401 → session expired) and endpoints
   auth/         AuthProvider (session restore via /auth/me), RequireAuth route guard
   theme/        ThemeProvider: light / dark / system, saved per browser
-  hooks/        useApiQuery (fetch state, abort, keep data while refetching), useDateRange (URL)
-  components/   ui/ (buttons, cards, states, status badges) and charts/ (frames, tooltips, bars)
+  hooks/        useApiQuery (fetch state, abort, keep data while refetching), useListParams and
+                useDateRange (list/range state in the URL), useForm (values, errors, submit)
+  components/   ui/ (buttons, fields, modal, toasts, badges), charts/, and data/ (sortable
+                paginated ResourceTable, EntityPicker combobox)
   features/     dashboard panels, each fetching its own data
   layouts/      app shell: sidebar on desktop, drawer on mobile
-  pages/        Login, Dashboard (lazy-loaded), Not found
+  pages/        Login, Dashboard (lazy-loaded), Orders, Order, New order, Products,
+                Categories, Customers, Inventory, Users, Not found
   routes.jsx    route table (used by the app and by tests)
 ```
 
@@ -74,6 +115,11 @@ src/
   - No chart uses two y-axes.
 - **Every chart has a table view** (the chart/table toggle), so values are readable without
   hovering and without relying on color.
+- **Dialogs:** labelled, focus moves to the first field, Tab stays inside, Escape closes, and
+  focus returns to the button that opened them. The pickers follow the combobox pattern
+  (arrow keys, Enter, Escape).
+- **Tables:** sortable headers announce their state with `aria-sort`; on small screens a table
+  scrolls inside its card instead of widening the page.
 - **Interaction and semantics:**
   - Keyboard focus is visible, and there is a skip link.
   - Icon-only buttons have accessible names.
@@ -95,7 +141,9 @@ src/
 | | |
 | --- | --- |
 | ![Sign in](screenshots/01-login.png) | ![Dashboard, dark, 90 days](screenshots/03-dashboard-dark-90d.png) |
-| ![Mobile](screenshots/04-dashboard-mobile.png) | |
+| ![Mobile](screenshots/04-dashboard-mobile.png) | ![Orders](screenshots/05-orders.png) |
+| ![New order](screenshots/06-new-order.png) | ![Order detail](screenshots/07-order-detail.png) |
+| ![Inventory ledger](screenshots/08-inventory.png) | ![Product form](screenshots/09-product-form.png) |
 
-The screenshots show the 90-day synthetic dataset (`npm run generate-data`) processed through the
+The dashboard screenshots show the 90-day synthetic dataset (`npm run generate-data`) processed through the
 full pipeline (relay → Kafka → Spark). They were captured with a headless browser.

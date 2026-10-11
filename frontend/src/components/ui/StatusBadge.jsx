@@ -9,8 +9,9 @@ const STATUS = {
   unknown: { icon: CircleHelp, dot: 'text-ink-muted' },
 };
 
-export function StatusBadge({ status = 'unknown', label }) {
-  const { icon: Icon, dot } = STATUS[status] ?? STATUS.unknown;
+export function StatusBadge({ status = 'unknown', label, icon }) {
+  const { icon: defaultIcon, dot } = STATUS[status] ?? STATUS.unknown;
+  const Icon = icon ?? defaultIcon;
   return (
     <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface-raised px-2 py-0.5 text-xs font-medium text-ink">
       <Icon aria-hidden="true" className={`size-3.5 ${dot}`} />
