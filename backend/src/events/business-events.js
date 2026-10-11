@@ -42,6 +42,8 @@ export function orderStatusChanged({ order, fromStatus, changedAt }) {
       fromStatus,
       toStatus: order.status,
       totalAmount: order.totalAmount,
+      // Lets analytics attribute a cancellation to the hour the order was placed.
+      orderCreatedAt: order.createdAt,
       changedAt,
     },
   };

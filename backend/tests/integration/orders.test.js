@@ -321,6 +321,10 @@ describe('PATCH /api/orders/:id/status', () => {
       expect(res.body.order.status).toBe(status);
     }
     const events = await ctx.outboxEvents('order.status_changed');
+    expect(events[0].payload.orderCreatedAt).toBeTruthy();
+    expect(
+      new Date(events[0].payload.orderCreatedAt) <= new Date(events[0].payload.changedAt),
+    ).toBe(true);
     expect(events.map((e) => [e.payload.fromStatus, e.payload.toStatus])).toEqual([
       ['pending', 'paid'],
       ['paid', 'shipped'],

@@ -1,0 +1,2 @@
+# Runtime dependencies (PySpark itself comes with the Spark base image).
+psycopg[binary]==3.3.6

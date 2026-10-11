@@ -13,18 +13,22 @@ A full-stack e-commerce operations app with a streaming analytics pipeline.
 
 > **Status:** under active development. This README grows as each build step lands.
 
-## Architecture (planned)
+## Architecture
 
 ```
- React (Vite)  ──HTTP/cookie──▶  Express API  ──SQL tx──▶  PostgreSQL (OLTP)
-                                     │                         ▲
-                                     │ events                  │ aggregates
-                                     ▼                         │
-                                   Kafka  ──▶  Spark Structured Streaming
-                                                     │
-                                                     ▼
-                                              Parquet (history)
+ React (Vite)  ──HTTP/cookie──▶  Express API  ──SQL tx──▶  PostgreSQL ◀─────────────┐
+                                                  (orders + event_outbox    aggregates,
+                                                   in one transaction)      anomalies,
+                                                         │                  heartbeats
+                                               outbox relay (npm run relay)      │
+                                                         ▼                       │
+                                                       Kafka ──▶ Spark Structured Streaming
+                                                                       │
+                                                                       ▼
+                                                           Parquet history + quarantine
 ```
+
+The frontend is not built yet.
 
 ## Repository layout
 
@@ -86,6 +90,8 @@ docker compose up -d postgres kafka
 docker compose ps          # wait until both show "(healthy)"; Kafka takes ~20 seconds
 ```
 
+The Spark streaming job is started separately (step 6) because its image is large.
+
 On the first start the container also creates a separate `ecommerce_test` database that the
 automated tests use, so tests never touch your development data.
 
@@ -140,6 +146,24 @@ running until you press Ctrl+C. If Kafka is down it keeps retrying, and no event
 
 Pipeline status is available at `GET /api/pipeline/health` (signed-in users).
 
+### 6. Run the Spark analytics pipeline
+
+```powershell
+docker compose up -d spark-streaming      # first run builds the image (~1 GB, a few minutes)
+docker compose logs -f spark-streaming    # one line per processed micro-batch
+```
+
+Spark reads the Kafka topics, validates and deduplicates events, keeps a Parquet history, and
+maintains dashboard aggregates and anomalies in PostgreSQL. The Spark UI is at
+<http://localhost:4040>. See [docs/analytics.md](docs/analytics.md) for the design, guarantees,
+and the batch rebuild job.
+
+| Command (from the repo root)                | What it does                                |
+| ------------------------------------------- | ------------------------------------------- |
+| `docker compose up -d spark-streaming`      | Start the streaming job                     |
+| `docker compose run --rm spark-rebuild`     | Rebuild aggregates from Parquet history     |
+| `docker compose run --rm analytics-tests`   | Ruff + pytest for the analytics code        |
+
 ### Backend commands (run from `backend/`)
 
 | Command                | What it does                                        |
@@ -173,7 +197,8 @@ docker compose up -d postgres
 
 ## Contributing and CI
 
-Every change goes through a feature branch and a pull request. GitHub Actions runs formatting,
-lint, migration, and test checks against a fresh PostgreSQL database on each pull request. See
+Every change goes through a feature branch and a pull request. GitHub Actions runs two jobs on each
+pull request: backend (format, lint, migrations, tests with PostgreSQL and Kafka) and analytics
+(ruff and pytest inside the Spark image). See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the branch naming, commit conventions, and how to protect
 `main`.

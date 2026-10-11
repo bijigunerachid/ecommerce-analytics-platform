@@ -106,6 +106,7 @@ Emitted for every allowed status transition (`pending → paid`, `paid → shipp
   "fromStatus": "paid",
   "toStatus": "cancelled",
   "totalAmount": "2059.95",
+  "orderCreatedAt": "2026-10-10T20:15:00.000Z",
   "changedAt": "2026-10-10T21:00:00.000Z"
 }
 ```
