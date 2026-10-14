@@ -76,6 +76,24 @@ Clears the session cookie. `204`. Works whether or not you are logged in.
 
 Returns `{ "user": { ... } }` for the current session, or `401`.
 
+## Your account
+
+Any signed-in user, for their own account.
+
+| Method & path | Body | Notes |
+| --- | --- | --- |
+| `PATCH /auth/me` | `{ "fullName": "..." }` | `200 { user }`. Email and role are changed by an admin. |
+| `POST /auth/password` | `{ "currentPassword", "newPassword" }` | `204`. Rate limited like sign-in. |
+| `POST /auth/sessions/revoke-others` | | `204`. Signs out every other session. |
+
+Changing the password checks the current one (`400` with a `currentPassword` field error if
+wrong), rejects reusing it, and applies the usual rule (12–72 bytes). It signs out every other
+session; the response sets a new cookie so this one stays signed in.
+
+Sessions carry a session version. A password change, a password reset, "sign out other
+sessions", or deactivation raises it, so every session issued before stops working on its next
+request (and live streams end at their next heartbeat).
+
 ## Users (admin only)
 
 ### `GET /users`
@@ -90,6 +108,46 @@ Returns `{ "user": { ... } }` for the current session, or `401`.
 
 - Email is trimmed and lowercased. Password must be 12–72 bytes. Role is `admin` or `analyst`.
 - `201` → `{ "user": { ... } }`, `409` if the email is taken.
+
+### `PATCH /users/:id`
+
+`{ "fullName"?, "role"?, "isActive"? }` (at least one) → `200 { user }`. Deactivating signs the
+user out everywhere (reactivating does not restore old sessions).
+
+| Status | `code` | When |
+| --- | --- | --- |
+| `409` | `SELF_CHANGE_NOT_ALLOWED` | Changing your own role or deactivating yourself |
+| `409` | `LAST_ADMIN` | The change would leave no active admin (checked under row locks, so two admins demoting each other at once cannot both succeed) |
+
+### `POST /users/:id/password`
+
+`{ "password": "..." }` → `200 { user }`. Sets a new password for another user and signs them
+out everywhere. Your own password is changed with `POST /auth/password` (`409` otherwise).
+
+## Audit log (admin only)
+
+### `GET /audit-log`
+
+Newest first, `{ data, pagination }` (`pageSize` default 25). Filters: `action`, `actorId`,
+`entityType`, `entityId`, `search` (description or email), `dateFrom`, `dateTo`.
+
+```json
+{ "id": 812, "occurredAt": "...", "action": "product.updated",
+  "actor": { "id": 1, "email": "admin@example.com", "fullName": "Ada Admin" },
+  "entityType": "product", "entityId": "10",
+  "summary": "Updated product Aurora 14\" Laptop (ELC-LAPTOP-14)",
+  "details": { "price": { "from": "1299.00", "to": "1199.00" } },
+  "ip": "203.0.113.7" }
+```
+
+Recorded actions: `auth.login`, `auth.login_failed` (with the attempted email, no actor id),
+`auth.logout`, `account.profile_updated`, `account.password_changed`,
+`account.sessions_revoked`, `user.created`, `user.updated`, `user.password_reset`,
+`order.created`, `order.status_changed`, `order.bulk_status_changed`, `order.note_added`,
+`inventory.adjusted`, and `created`/`updated`/`deleted` for `product`, `category`, and
+`customer`. Updates record the changed fields as `{ from, to }`. Idempotent replays are not
+recorded twice. Passwords and tokens are never recorded. `actor` is `null` for the
+`create-admin` script.
 
 ## Conventions for resource endpoints
 

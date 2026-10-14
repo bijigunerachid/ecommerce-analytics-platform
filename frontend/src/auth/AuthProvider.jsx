@@ -53,6 +53,12 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const value = useMemo(() => ({ user, status, login, logout }), [user, status, login, logout]);
+  // Applies a changed profile (e.g. a new name) without another round trip.
+  const updateUser = useCallback((next) => setUser(next), []);
+
+  const value = useMemo(
+    () => ({ user, status, login, logout, updateUser }),
+    [user, status, login, logout, updateUser],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

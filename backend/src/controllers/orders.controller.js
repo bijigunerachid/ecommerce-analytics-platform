@@ -15,6 +15,19 @@ export function createOrdersController({ ordersService }) {
       });
       // A retried request gets the original order back, flagged so clients can tell.
       if (replayed) res.set('Idempotent-Replayed', 'true');
+      else {
+        await req.audit({
+          action: 'order.created',
+          entityType: 'order',
+          entityId: order.id,
+          summary: `Placed order #${order.id} for ${order.customerName} (${order.totalAmount})`,
+          details: {
+            customerId: order.customerId,
+            totalAmount: order.totalAmount,
+            items: order.items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+          },
+        });
+      }
       res.status(replayed ? 200 : 201).json({ order });
     },
 
@@ -24,14 +37,34 @@ export function createOrdersController({ ordersService }) {
         userId: req.user.id,
         note,
       });
+      await req.audit({
+        action: 'order.status_changed',
+        entityType: 'order',
+        entityId: order.id,
+        summary: `Changed order #${order.id} to ${status}`,
+        details: { status, ...(note && { note }) },
+      });
       res.json({ order });
     },
 
     async bulkUpdateStatus(req, res) {
       const { orderIds, status, note } = req.validated.body;
-      res.json(
-        await ordersService.bulkUpdateStatus(orderIds, status, { userId: req.user.id, note }),
-      );
+      const result = await ordersService.bulkUpdateStatus(orderIds, status, {
+        userId: req.user.id,
+        note,
+      });
+      await req.audit({
+        action: 'order.bulk_status_changed',
+        entityType: 'order',
+        summary: `Changed ${result.updated.length} of ${orderIds.length} orders to ${status}`,
+        details: {
+          status,
+          updated: result.updated,
+          failed: result.failed.map((f) => f.orderId),
+          ...(note && { note }),
+        },
+      });
+      res.json(result);
     },
 
     async history(req, res) {
@@ -46,6 +79,12 @@ export function createOrdersController({ ordersService }) {
       const note = await ordersService.addNote(req.validated.params.id, {
         body: req.validated.body.body,
         userId: req.user.id,
+      });
+      await req.audit({
+        action: 'order.note_added',
+        entityType: 'order',
+        entityId: req.validated.params.id,
+        summary: `Added a note to order #${req.validated.params.id}`,
       });
       res.status(201).json({ note });
     },

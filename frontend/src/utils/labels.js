@@ -38,3 +38,30 @@ export const SEGMENT_LABELS = {
   loyal: 'Loyal',
   lapsed: 'Lapsed',
 };
+
+/** Audit log actions; mirrors what the API records (see docs/api.md). */
+export const AUDIT_ACTION_LABELS = {
+  'auth.login': 'Signed in',
+  'auth.login_failed': 'Failed sign-in',
+  'auth.logout': 'Signed out',
+  'account.profile_updated': 'Profile updated',
+  'account.password_changed': 'Password changed',
+  'account.sessions_revoked': 'Other sessions signed out',
+  'user.created': 'User created',
+  'user.updated': 'User updated',
+  'user.password_reset': 'Password reset',
+  'order.created': 'Order placed',
+  'order.status_changed': 'Order status changed',
+  'order.bulk_status_changed': 'Bulk status change',
+  'order.note_added': 'Order note added',
+  'inventory.adjusted': 'Stock adjusted',
+  'product.created': 'Product created',
+  'product.updated': 'Product updated',
+  'product.deleted': 'Product deleted',
+  'category.created': 'Category created',
+  'category.updated': 'Category updated',
+  'category.deleted': 'Category deleted',
+  'customer.created': 'Customer created',
+  'customer.updated': 'Customer updated',
+  'customer.deleted': 'Customer deleted',
+};

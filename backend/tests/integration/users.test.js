@@ -52,7 +52,8 @@ describe('role-based access to /api/users', () => {
       'admin@example.test',
       'analyst@example.test',
     ]);
-    expect(JSON.stringify(res.body)).not.toMatch(/password/i);
+    // No hash field and no bcrypt hash value (passwordChangedAt, a date, is fine).
+    expect(JSON.stringify(res.body)).not.toMatch(/password_?hash|\$2[aby]\$|session_?version/i);
   });
 });
 

@@ -12,6 +12,7 @@ import {
   PanelLeftOpen,
   Search,
   Sun,
+  UserRound,
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -212,6 +213,8 @@ function UserMenu({ onOpenHelp }) {
         </div>
       }
       items={[
+        { label: 'Account settings', icon: UserRound, onSelect: () => navigate('/account') },
+        { type: 'separator' },
         { type: 'label', label: 'Theme' },
         ...['light', 'dark', 'system'].map((value) => ({
           label: value === 'system' ? 'System' : value === 'light' ? 'Light' : 'Dark',
