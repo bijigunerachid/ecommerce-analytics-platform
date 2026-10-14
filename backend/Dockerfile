@@ -16,6 +16,10 @@ RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
 
 # ---- Runtime ----
 FROM node:22-bookworm-slim
+# Apply pending OS security updates on every build.
+RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
+ && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production \
     SAMPLE_CATALOG_PATH=/app/data/samples/catalog.json
 WORKDIR /app

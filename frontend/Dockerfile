@@ -10,6 +10,8 @@ RUN npm run build
 
 # ---- Serve ----
 FROM nginx:1.30-alpine
+# Apply pending OS package updates on every build.
+RUN apk upgrade --no-cache
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /app/dist /usr/share/nginx/html
