@@ -14,6 +14,15 @@ function intFromEnv(name, fallback) {
   return value;
 }
 
+function intFromEnvAllowZero(name) {
+  const raw = process.env[name];
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isInteger(value) || value < 0 || String(value) !== raw.trim()) {
+    throw new Error(`${name} must be a whole number of proxies (0 or more), got "${raw}"`);
+  }
+  return value;
+}
+
 export function loadConfig() {
   const nodeEnv = process.env.NODE_ENV || 'development';
   const isProduction = nodeEnv === 'production';
@@ -29,6 +38,10 @@ export function loadConfig() {
   return {
     nodeEnv,
     port: intFromEnv('API_PORT', 4000),
+    // Number of reverse proxies in front of the API (e.g. 1 behind the nginx container). Lets
+    // Express take the client IP from X-Forwarded-For, which the login rate limit relies on.
+    // Keep 0 when clients connect directly, or they could spoof their IP with that header.
+    trustProxy: process.env.TRUST_PROXY ? intFromEnvAllowZero('TRUST_PROXY') : 0,
     db: getDatabaseConfig(),
     corsOrigins: (process.env.CORS_ORIGIN || 'http://localhost:5173')
       .split(',')

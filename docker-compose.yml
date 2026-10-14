@@ -63,6 +63,85 @@ services:
       retries: 12
       start_period: 20s
 
+  # One-shot: applies database migrations, then exits. Everything that needs the schema waits
+  # for it to finish successfully.
+  migrate:
+    &backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: ecommerce-backend:dev
+    container_name: ecommerce-migrate
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment: &backend-env
+      NODE_ENV: production
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_TEST_DB: ${POSTGRES_TEST_DB:-ecommerce_test}
+      API_PORT: 4000
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      JWT_TTL_SECONDS: ${JWT_TTL_SECONDS:-3600}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+      # The app is served over plain HTTP on localhost here. Set COOKIE_SECURE=true when it is
+      # served over HTTPS.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      CORS_ORIGIN: ${WEB_ORIGIN:-http://localhost:8080}
+      # One proxy (the web container's nginx) sits in front of the API.
+      TRUST_PROXY: 1
+      LOGIN_RATE_LIMIT_MAX: ${LOGIN_RATE_LIMIT_MAX:-10}
+      LOGIN_RATE_LIMIT_WINDOW_MINUTES: ${LOGIN_RATE_LIMIT_WINDOW_MINUTES:-15}
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_TOPIC_PREFIX: ${KAFKA_TOPIC_PREFIX:-ecommerce}
+    command: ["node", "scripts/migrate.js", "up"]
+
+  # REST API. Not published on the host: the web container proxies /api to it.
+  api:
+    <<: *backend
+    container_name: ecommerce-api
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    command: ["node", "src/server.js"]
+
+  # Publishes committed business events from the outbox table to Kafka.
+  relay:
+    <<: *backend
+    container_name: ecommerce-relay
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    command: ["node", "src/workers/outbox-relay.js"]
+    healthcheck:
+      # The relay reports liveness to PostgreSQL (pipeline_heartbeats), not over HTTP:
+      # unhealthy when the heartbeat is stale or it reports publish errors (e.g. Kafka down).
+      test: ["CMD", "node", "scripts/relay-healthcheck.js"]
+      interval: 15s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+
+  # The web app (nginx): serves the React build and proxies /api to the API.
+  web:
+    build: ./frontend
+    image: ecommerce-web:dev
+    container_name: ecommerce-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:80"
+
   # Spark Structured Streaming: Kafka → validation → Parquet history + PostgreSQL aggregates.
   spark-streaming:
     &analytics
@@ -71,10 +150,11 @@ services:
     container_name: ecommerce-spark-streaming
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
       kafka:
         condition: service_healthy
+      # The analytics tables are created by the backend migrations.
+      migrate:
+        condition: service_completed_successfully
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
@@ -90,6 +170,13 @@ services:
     ports:
       # Spark UI for the streaming job: http://localhost:4040
       - "127.0.0.1:4040:4040"
+    healthcheck:
+      # Healthy while the job keeps reporting heartbeats to PostgreSQL (see bin/healthcheck.py).
+      test: ["CMD", "python3", "bin/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 3
 
   # Batch job: rebuilds all aggregates from the Parquet history (run on demand).
   #   docker compose stop spark-streaming
@@ -101,6 +188,8 @@ services:
     restart: "no"
     profiles: [batch]
     ports: []
+    healthcheck:
+      disable: true
     command: ["spark-submit", "--driver-memory", "1g", "bin/rebuild_aggregates.py"]
 
   # Analytics test suite (uses the test database and a temporary data directory):
@@ -111,6 +200,8 @@ services:
     restart: "no"
     profiles: [test]
     ports: []
+    healthcheck:
+      disable: true
     volumes:
       # Mount the source so tests run against the working copy without rebuilding.
       - ./analytics:/app

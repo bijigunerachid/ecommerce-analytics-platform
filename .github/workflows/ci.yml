@@ -201,3 +201,48 @@ jobs:
 
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
+
+  stack:
+    name: Full stack (Docker Compose smoke test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js (runs the smoke test)
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Create .env with throwaway secrets
+        run: |
+          cp .env.example .env
+          sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" .env
+          sed -i "s/^JWT_SECRET=.*/JWT_SECRET=$(openssl rand -hex 48)/" .env
+
+      - name: Build and start the stack
+        # Spark is covered by the Analytics job; its image is large, so it is not started here.
+        run: docker compose up -d --build --wait web relay
+
+      - name: Create an admin account
+        run: >-
+          docker compose exec -T -e ADMIN_PASSWORD=ci-smoke-admin-password
+          api node scripts/create-admin.js --email ci.admin@example.com --name "CI Admin"
+
+      - name: Run the smoke test through nginx
+        env:
+          SMOKE_ADMIN_EMAIL: ci.admin@example.com
+          SMOKE_ADMIN_PASSWORD: ci-smoke-admin-password
+        run: node scripts/smoke-test.mjs http://localhost:8080
+
+      - name: Show container status and logs on failure
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --no-color --tail=100 migrate api relay web
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v
