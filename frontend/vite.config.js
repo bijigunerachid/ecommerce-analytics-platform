@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => {
           // than the app, so browsers keep them cached across releases. Pages and the charting
           // library are split per route (lazy imports in routes.jsx).
           manualChunks(id) {
-            if (/node_modules[\/](react|react-dom|react-router|scheduler)[\/]/.test(id)) {
+            if (/node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/.test(id)) {
               return 'react-vendor';
             }
             return undefined;
