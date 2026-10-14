@@ -107,6 +107,7 @@ export function createApp({ db, config }) {
 
   const app = express();
   app.disable('x-powered-by');
+  app.set('trust proxy', config.trustProxy ?? 0);
   app.use(helmet());
   app.use(
     cors({

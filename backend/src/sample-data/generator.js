@@ -22,7 +22,10 @@ import {
 } from '../events/business-events.js';
 import { fromCents, toCents } from '../utils/money.js';
 
-export const CATALOG_PATH = path.resolve(import.meta.dirname, '../../../data/samples/catalog.json');
+// SAMPLE_CATALOG_PATH lets the Docker image point at its own copy of the catalog.
+export const CATALOG_PATH =
+  process.env.SAMPLE_CATALOG_PATH ||
+  path.resolve(import.meta.dirname, '../../../data/samples/catalog.json');
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;

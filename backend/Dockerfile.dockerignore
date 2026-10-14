@@ -1,0 +1,8 @@
+# Build context is the repo root; send only what the backend image needs.
+*
+!backend/package.json
+!backend/package-lock.json
+!backend/src/
+!backend/scripts/
+!backend/migrations/
+!data/samples/

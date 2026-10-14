@@ -2,242 +2,167 @@
 
 [![CI](https://github.com/bijigunerachid/ecommerce-analytics-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/bijigunerachid/ecommerce-analytics-platform/actions/workflows/ci.yml)
 
-A full-stack e-commerce operations app with a streaming analytics pipeline.
-
-- **Transactional side:** a React + Express app over PostgreSQL for managing products, customers,
-  orders, and inventory. Orders and stock changes are validated server-side and run in database
-  transactions.
-- **Analytical side:** the backend publishes business events to Kafka. Spark Structured Streaming
-  validates and deduplicates them, writes history to Parquet, computes revenue and product metrics,
-  flags anomalies, and stores dashboard-ready aggregates back in PostgreSQL.
-
-> **Status:** under active development. This README grows as each build step lands.
-
-## Architecture
-
-```
- React (Vite)  ──HTTP/cookie──▶  Express API  ──SQL tx──▶  PostgreSQL ◀─────────────┐
-                                                  (orders + event_outbox    aggregates,
-                                                   in one transaction)      anomalies,
-                                                         │                  heartbeats
-                                               outbox relay (npm run relay)      │
-                                                         ▼                       │
-                                                       Kafka ──▶ Spark Structured Streaming
-                                                                       │
-                                                                       ▼
-                                                           Parquet history + quarantine
-```
+An e-commerce operations app with a real-time analytics pipeline. Staff manage products,
+customers, orders, and inventory in a React app. Every business change becomes an event that flows
+through Kafka into Spark Structured Streaming, which keeps a Parquet history, maintains dashboard
+metrics, and flags suspicious activity, all within seconds.
 
 ![Analytics dashboard](docs/screenshots/02-dashboard-light.png)
+
+## Highlights
+
+- **Correct by construction:** order totals are computed by the server in integer cents. Stock
+  changes are transactional and can't go negative, even under concurrent orders. Retried requests
+  are idempotent, so a double-click or network retry never creates a second order.
+- **Transactional outbox:** events are written in the same database transaction as the change, so
+  nothing is lost or invented when Kafka is down. They are published in order, at least once.
+- **Exactly-once analytics:** Spark deduplicates by event id against PostgreSQL. Aggregates are
+  exact even with redelivered events, replayed batches, or late data, and can be rebuilt from the
+  Parquet history at any time.
+- **Anomaly detection:** unusually large orders, order bursts from one customer, daily revenue
+  spikes, and large stock write-offs. Thresholds were tuned on realistic data, from 122 false
+  alarms down to 7 meaningful alerts.
+- **Secure by default:** JWT in HttpOnly SameSite cookies, admin/analyst roles enforced on the
+  server, validated input everywhere, parameterized SQL, login rate limiting, a strict
+  Content-Security-Policy, and no secrets in the repository.
+- **Accessible, responsive UI:** light and dark themes, keyboard-friendly dialogs, a table view
+  for every chart, and validated colorblind-safe chart colors.
+- **Tested at every layer:** about 350 automated tests (backend against real PostgreSQL and Kafka,
+  Spark jobs, frontend), plus a full-stack smoke test, all in CI.
+
+## Quick start (Docker only)
+
+You need **Docker Desktop** with about 4 GB of memory for Docker. Nothing else has to be installed.
+Commands are for PowerShell, from the repository folder.
+
+**1. Configure.** Copy the example settings, then generate two secrets:
+
+```powershell
+Copy-Item .env.example .env
+# Run this twice: once for POSTGRES_PASSWORD, once for JWT_SECRET
+$b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); -join ($b | ForEach-Object { $_.ToString('x2') })
+```
+
+Paste the values into `.env` (replace `change-me-…`) using VS Code or Notepad. `.env` is
+git-ignored. Never commit it.
+
+**2. Start everything:**
+
+```powershell
+docker compose up -d --build --wait
+```
+
+The first run builds the images and takes several minutes; later starts take under a minute. This
+starts PostgreSQL, Kafka, the database migrations, the API, the outbox relay, the Spark streaming
+job, and the web app.
+
+**3. Create the first administrator** (there is no public sign-up):
+
+```powershell
+docker compose exec api node scripts/create-admin.js
+```
+
+**4. Open <http://localhost:8080>** and sign in.
+
+**Optional: load 90 days of realistic sample data** (only into an empty database, about 2
+minutes). The dashboard fills within a minute as the events stream through the pipeline:
+
+```powershell
+docker compose exec api node scripts/generate-sample-data.js
+```
+
+| Task | Command |
+| --- | --- |
+| Status of all services | `docker compose ps` |
+| Logs of one service | `docker compose logs -f api` (or `relay`, `spark-streaming`, `web`) |
+| Stop (keep data) | `docker compose down` |
+| Stop and **delete all data** | `docker compose down -v` |
+| Spark UI | <http://localhost:4040> |
+| Check the running stack | `node scripts/smoke-test.mjs` (Node 22; see [docs/development.md](docs/development.md)) |
+
+Something not working? See [docs/troubleshooting.md](docs/troubleshooting.md).
+
+## Features
+
+| Area | What you can do |
+| --- | --- |
+| Dashboard | Net revenue, orders, average order value, cancellations, new customers (vs the previous period); revenue over time; best sellers and categories; order status; new vs returning customers; inventory watchlist; anomalies; pipeline health |
+| Orders | Search and filter; place orders with customer and product pickers; status lifecycle (pending → paid → shipped → delivered, or cancelled with automatic restock) |
+| Catalog | Products and categories with prices, stock levels, low-stock flags; create, edit, deactivate |
+| Customers | Order history and spending per customer |
+| Inventory | Full stock ledger (orders, cancellations, restocks, adjustments) and stock adjustments |
+| Users | Admins create admin or analyst accounts; analysts have read-only access |
 
 More screenshots (dark mode, mobile, orders, inventory, forms) are in
 [docs/frontend.md](docs/frontend.md).
 
-## Repository layout
+## Architecture
 
-| Path                 | Contents                                         |
-| -------------------- | ------------------------------------------------ |
-| `frontend/`          | React + Vite + Tailwind CSS v4 (JavaScript only) |
-| `backend/`           | Express REST API, PostgreSQL access, Kafka producer |
-| `analytics/`         | Python / PySpark streaming and batch jobs        |
-| `data/samples/`      | Small synthetic sample datasets                  |
-| `docs/`              | Architecture, API, and setup documentation       |
-| `scripts/`           | Developer helper scripts                         |
-| `.github/workflows/` | CI pipelines                                     |
+```mermaid
+flowchart LR
+    browser([Browser]) --> web[nginx: React app + /api proxy]
+    web --> api[Express API]
+    api -- "one transaction:<br/>data + outbox event" --> pg[(PostgreSQL)]
+    relay[Outbox relay] -- poll --> pg
+    relay -- publish --> kafka[[Kafka]]
+    kafka --> spark[Spark Structured Streaming]
+    spark --> parquet[(Parquet history)]
+    spark -- "aggregates, anomalies" --> pg
+```
+
+PostgreSQL is the system of record; Kafka and Spark only ever see copies of events. The full
+design, with a sequence diagram of an order and the list of guarantees, is in
+[docs/architecture.md](docs/architecture.md).
 
 ## Tech stack
 
-**Frontend:** React, Vite, Tailwind CSS v4, React Router, Recharts, Lucide icons
-**Backend:** Node.js, Express, PostgreSQL, JWT in HttpOnly cookies, RBAC (admin/analyst)
-**Data:** Apache Kafka, Python, Apache Spark Structured Streaming, Parquet
-**Infra:** Docker Compose, GitHub Actions
+| Layer | Technologies |
+| --- | --- |
+| Frontend | React 19, Vite 7, Tailwind CSS v4, React Router 7, Recharts 3, lucide icons (JavaScript only) |
+| Backend | Node.js 22, Express 5, Zod 4, PostgreSQL 17 (`pg`), JWT + bcrypt, node-pg-migrate |
+| Streaming | Apache Kafka 4.2 (KRaft), Confluent Kafka client (librdkafka) |
+| Analytics | Apache Spark 4.1 Structured Streaming (PySpark), Parquet, psycopg 3 |
+| Infrastructure | Docker Compose, nginx, GitHub Actions |
+| Testing | Vitest, Supertest, Testing Library, MSW, pytest, Playwright (screenshots) |
 
-## Prerequisites (Windows 11)
+## Repository layout
 
-- Git ≥ 2.40
-- Docker Desktop (Compose v2) — Kafka, Spark, and PostgreSQL all run in containers
-- Node.js ≥ 22.13 (22 LTS)
-- Python 3.10+ is optional on the host
+| Path | Contents |
+| --- | --- |
+| `frontend/` | React app; `Dockerfile` builds it into an nginx image |
+| `backend/` | Express API, outbox relay, migrations, scripts (admin, sample data) |
+| `analytics/` | PySpark streaming and batch jobs, with tests |
+| `data/samples/` | Synthetic product catalog for the sample data generator |
+| `docs/` | Architecture, API, events, database, analytics, frontend, development, troubleshooting |
+| `scripts/` | Environment check and full-stack smoke test |
+| `.github/workflows/` | CI |
 
-Check your machine from the repo root in PowerShell:
+## Documentation
 
-```powershell
-.\scripts\check-env.ps1
-```
+| Document | Contents |
+| --- | --- |
+| [docs/architecture.md](docs/architecture.md) | Components, order flow, guarantees, observability |
+| [docs/development.md](docs/development.md) | Running the code locally with hot reload; all test commands |
+| [docs/api.md](docs/api.md) | Every REST endpoint, errors, roles, idempotency |
+| [docs/events.md](docs/events.md) | Kafka topics, event contracts, delivery guarantees |
+| [docs/database.md](docs/database.md) | Schema, constraints, locking |
+| [docs/analytics.md](docs/analytics.md) | Spark pipeline, exactly-once design, anomaly rules, recovery |
+| [docs/frontend.md](docs/frontend.md) | Frontend structure, design system, accessibility, screenshots |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Common problems and fixes |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Branching, commit conventions, CI |
 
-If PowerShell blocks the script, allow local scripts for your user once:
+## Testing
 
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-```
+| Suite | Command | Runs in CI |
+| --- | --- | --- |
+| Backend (API, database, Kafka relay) | `cd backend; npm test` | ✓ with PostgreSQL and Kafka services |
+| Analytics (Spark jobs) | `docker compose run --rm analytics-tests` | ✓ inside the Spark image |
+| Frontend (components, pages, flows) | `cd frontend; npm test` | ✓ plus a production build |
+| Full stack (through nginx) | `node scripts/smoke-test.mjs` | ✓ on a fresh Docker Compose stack |
 
-## Configuration
+Details and single-test commands are in [docs/development.md](docs/development.md).
 
-```powershell
-Copy-Item .env.example .env
-# then edit .env and replace every placeholder value
-```
+## Data and privacy
 
-`.env` is git-ignored. Never commit real secrets or real customer data.
-
-> **Windows note:** save `.env` as UTF-8 **without** BOM. Windows PowerShell 5.1's
-> `Set-Content -Encoding utf8` adds a BOM, which breaks Node's `.env` parser. `Copy-Item`,
-> VS Code, and Notepad on Windows 11 are all fine.
-
-## Getting started
-
-### 1. Start PostgreSQL and Kafka
-
-```powershell
-docker compose up -d postgres kafka
-docker compose ps          # wait until both show "(healthy)"; Kafka takes ~20 seconds
-```
-
-The Spark streaming job is started separately (step 6) because its image is large.
-
-On the first start the container also creates a separate `ecommerce_test` database that the
-automated tests use, so tests never touch your development data.
-
-### 2. Install backend dependencies and apply migrations
-
-```powershell
-cd backend
-npm install
-npm run migrate:up         # apply all pending migrations to the dev database
-```
-
-### 3. Create the first administrator
-
-There is no public sign-up. Create the first admin from the command line:
-
-```powershell
-npm run create-admin
-```
-
-It asks for the email, full name, and password. The password isn't shown as you type and must be
-at least 12 characters. That admin can then create more accounts through `POST /api/users`.
-
-To pass the values as flags instead, call Node directly. Windows PowerShell drops the `--` in
-`npm run create-admin -- --email ...`, so the flags never reach the script through npm:
-
-```powershell
-node --env-file=../.env scripts/create-admin.js --email admin@example.com --name "Store Admin"
-# add --role analyst to create an analyst
-```
-
-### Optional: load realistic sample data
-
-To see the dashboard with months of history, generate a synthetic dataset **into an empty
-database** (no products yet). It takes about 2 minutes:
-
-```powershell
-npm run generate-data      # 90 days, ~60 orders/day (growing), fixed seed: same data every time
-```
-
-The generator writes orders, inventory movements, and business events the same way the app does,
-spread over the past 90 days. It uses busier weekends, a daily traffic curve, popular and niche
-products, returning customers, cancellations, restocks, and a few planted anomalies. All
-customers are fictional (`@example.com`); the catalog is in
-[data/samples/catalog.json](data/samples/catalog.json). Once the relay (step 5) and Spark (step 6)
-are running, the history flows into the dashboard analytics within about a minute.
-
-Other sizes: `node --env-file=../.env scripts/generate-sample-data.js --days 30 --orders-per-day 100 --seed 7`.
-To start over: `docker compose down -v` (deletes all data), then `docker compose up -d postgres kafka`
-and `npm run migrate:up`.
-
-### 4. Run the API
-
-```powershell
-npm run dev                # restarts automatically when files change
-```
-
-Check it at <http://localhost:4000/api/health>. The endpoints are documented in
-[docs/api.md](docs/api.md).
-
-### 5. Run the outbox relay (event publishing)
-
-In a **second terminal**, also from `backend/`:
-
-```powershell
-npm run relay
-```
-
-The relay publishes business events (orders, stock changes) from PostgreSQL to the Kafka topics
-`ecommerce.orders` and `ecommerce.inventory`, creating the topics on first start. It keeps
-running until you press Ctrl+C. If Kafka is down it keeps retrying, and no events are lost. See
-[docs/events.md](docs/events.md) for the event formats and delivery guarantees.
-
-Pipeline status is available at `GET /api/pipeline/health` (signed-in users).
-
-### 6. Run the frontend
-
-In another terminal:
-
-```powershell
-cd frontend
-npm install
-npm run dev               # http://localhost:5173 (proxies /api to the backend)
-```
-
-Sign in with the admin account from step 3. Besides the dashboard, the app manages orders
-(including placing new ones), products, categories, customers, inventory, and staff accounts. See [docs/frontend.md](docs/frontend.md) for the
-structure, design decisions, and configuration.
-
-### 7. Run the Spark analytics pipeline
-
-```powershell
-docker compose up -d spark-streaming      # first run builds the image (~1 GB, a few minutes)
-docker compose logs -f spark-streaming    # one line per processed micro-batch
-```
-
-Spark reads the Kafka topics, validates and deduplicates events, keeps a Parquet history, and
-maintains dashboard aggregates and anomalies in PostgreSQL. The Spark UI is at
-<http://localhost:4040>. See [docs/analytics.md](docs/analytics.md) for the design, guarantees,
-and the batch rebuild job.
-
-| Command (from the repo root)                | What it does                                |
-| ------------------------------------------- | ------------------------------------------- |
-| `docker compose up -d spark-streaming`      | Start the streaming job                     |
-| `docker compose run --rm spark-rebuild`     | Rebuild aggregates from Parquet history     |
-| `docker compose run --rm analytics-tests`   | Ruff + pytest for the analytics code        |
-
-### Backend commands (run from `backend/`)
-
-| Command                | What it does                                        |
-| ---------------------- | --------------------------------------------------- |
-| `npm run dev`          | Start the API with auto-reload                      |
-| `npm start`            | Start the API                                       |
-| `npm run create-admin` | Create an admin (or analyst) account                |
-| `npm run relay`        | Publish outbox events to Kafka (keeps running)      |
-| `npm run generate-data` | Load 90 days of synthetic history (empty DB only)  |
-| `npm run migrate:up`   | Apply all pending migrations                        |
-| `npm run migrate:down` | Revert the most recent migration                    |
-| `npm run migrate:test` | Apply migrations to the test database               |
-| `npm test`             | Run the automated tests (needs PostgreSQL and Kafka) |
-| `npm run lint`         | ESLint                                              |
-| `npm run format:check` | Prettier check (`npm run format` to fix)            |
-
-Run a single test file or test by name:
-
-```powershell
-npx vitest run tests/integration/schema.test.js
-npx vitest run -t "rejects negative stock"
-```
-
-See [docs/database.md](docs/database.md) for the schema design and [docs/api.md](docs/api.md)
-for every endpoint, including the dashboard analytics (`/api/analytics/*`).
-
-### Resetting the database
-
-```powershell
-docker compose down -v     # stops containers AND deletes the database volume
-docker compose up -d postgres
-```
-
-## Contributing and CI
-
-Every change goes through a feature branch and a pull request. GitHub Actions runs three jobs on each
-pull request: backend (format, lint, migrations, tests with PostgreSQL and Kafka), analytics
-(ruff and pytest inside the Spark image), and frontend (format, lint, tests, production build). See
-[CONTRIBUTING.md](CONTRIBUTING.md) for the branch naming, commit conventions, and how to protect
-`main`.
+All data in this repository is synthetic: the product catalog is fictional and generated customers
+use `@example.com` addresses. No real customer or payment information is used or stored.

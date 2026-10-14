@@ -122,6 +122,45 @@ describe('POST /api/auth/login', () => {
   });
 });
 
+describe('login rate limit behind a reverse proxy', () => {
+  const attempt = (app, ip) =>
+    request(app)
+      .post('/api/auth/login')
+      .set('X-Forwarded-For', ip)
+      .send({ email: 'x@example.test', password: 'wrong' });
+
+  it('limits each client separately when the proxy is trusted', async () => {
+    const proxied = createTestContext({
+      trustProxy: 1,
+      loginRateLimit: { windowMs: 60_000, max: 2 },
+    });
+    try {
+      for (let i = 0; i < 2; i++)
+        expect((await attempt(proxied.app, '203.0.113.7')).status).toBe(401);
+      expect((await attempt(proxied.app, '203.0.113.7')).status).toBe(429);
+      // A different client behind the same proxy is not affected.
+      expect((await attempt(proxied.app, '198.51.100.20')).status).toBe(401);
+    } finally {
+      await proxied.close();
+    }
+  });
+
+  it('ignores X-Forwarded-For when no proxy is trusted (it could be spoofed)', async () => {
+    const direct = createTestContext({
+      trustProxy: 0,
+      loginRateLimit: { windowMs: 60_000, max: 2 },
+    });
+    try {
+      expect((await attempt(direct.app, '203.0.113.1')).status).toBe(401);
+      expect((await attempt(direct.app, '203.0.113.2')).status).toBe(401);
+      // Changing the header does not reset the limit: the real connection IP is used.
+      expect((await attempt(direct.app, '203.0.113.3')).status).toBe(429);
+    } finally {
+      await direct.close();
+    }
+  });
+});
+
 describe('GET /api/auth/me', () => {
   it('returns the current user for a valid session', async () => {
     await ctx.createUser({ email: 'analyst@example.test', role: 'analyst' });

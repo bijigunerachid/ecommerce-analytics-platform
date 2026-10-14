@@ -82,6 +82,13 @@ ci: add backend test workflow
 2. Vitest + Testing Library tests (API mocked with MSW)
 3. Production build and dependency audit
 
+**Full stack job:**
+
+1. Creates a `.env` with throwaway secrets
+2. `docker compose up -d --build --wait web relay` (fresh volumes: migrations, API, relay, nginx)
+3. Creates an admin and runs `scripts/smoke-test.mjs` through nginx: health, security headers,
+   SPA routing, sign-in, orders (pricing, idempotent retry, oversell rejection), event publishing
+
 **Analytics job:**
 
 1. Starts PostgreSQL and applies the backend migrations (they own the analytics tables)
@@ -98,7 +105,8 @@ Make CI mandatory so nothing reaches `main` without passing:
 2. Target the `main` branch and enable:
    - **Require a pull request before merging**
    - **Require status checks to pass**, adding **Backend (lint, format, tests)**,
-     **Analytics (Spark tests)**, and **Frontend (lint, format, tests, build)** (checks appear in the list after they have run once)
+     **Analytics (Spark tests)**, **Frontend (lint, format, tests, build)**, and
+     **Full stack (Docker Compose smoke test)** (checks appear in the list after they have run once)
    - **Block force pushes**
 3. Optionally, under **Settings → General → Pull Requests**, allow only **squash merging** and
    enable **Automatically delete head branches**.

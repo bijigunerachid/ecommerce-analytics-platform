@@ -33,6 +33,7 @@ export function buildTestConfig(overrides = {}) {
     port: 0,
     db: getDatabaseConfig({ test: true }),
     corsOrigins: ['http://localhost:5173'],
+    trustProxy: 0,
     auth: {
       jwtSecret: 'test-secret-that-is-at-least-32-characters-long',
       tokenTtlSeconds: 3600,

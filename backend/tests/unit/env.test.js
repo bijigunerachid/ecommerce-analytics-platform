@@ -55,3 +55,17 @@ describe('loadConfig', () => {
     expect(() => loadConfig()).toThrow(/JWT_TTL_SECONDS/);
   });
 });
+
+describe('TRUST_PROXY', () => {
+  it('defaults to 0 (clients connect directly) and accepts a hop count', () => {
+    delete process.env.TRUST_PROXY;
+    expect(loadConfig().trustProxy).toBe(0);
+    process.env.TRUST_PROXY = '1';
+    expect(loadConfig().trustProxy).toBe(1);
+  });
+
+  it.each(['yes', '-1', '1.5'])('rejects %s', (value) => {
+    process.env.TRUST_PROXY = value;
+    expect(() => loadConfig()).toThrow(/TRUST_PROXY/);
+  });
+});
