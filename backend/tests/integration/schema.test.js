@@ -13,11 +13,15 @@ const client = new pg.Client(dbConfig);
 
 const CORE_TABLES = [
   'analytics_anomalies',
+  'analytics_cohort_retention',
+  'analytics_customer_segments',
   'analytics_customers',
+  'analytics_insights_runs',
   'analytics_inventory_daily',
   'analytics_order_status',
   'analytics_processed_events',
   'analytics_product_daily',
+  'analytics_sales_forecast',
   'analytics_sales_hourly',
   'analytics_stream_batches',
   'audit_log',

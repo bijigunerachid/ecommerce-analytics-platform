@@ -23,6 +23,7 @@ import {
   formatNumber,
   formatRelative,
 } from '../utils/format.js';
+import { SEGMENT_INFO } from '../features/insights/segments.js';
 import { SEGMENT_LABELS } from '../utils/labels.js';
 
 function Figure({ label, value, detail }) {
@@ -201,6 +202,15 @@ export function CustomerDetailPage() {
                   <h1 className="flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight text-ink">
                     {name}
                     {insights && <Badge>{SEGMENT_LABELS[insights.segment]}</Badge>}
+                    {insights?.valueSegment && (
+                      <Link
+                        to="/insights"
+                        title={`Value segment (RFM scores ${insights.valueSegment.scores.r}/${insights.valueSegment.scores.f}/${insights.valueSegment.scores.m}): ${SEGMENT_INFO[insights.valueSegment.segment].description}`}
+                        className="rounded-full bg-accent-soft/60 px-2 py-0.5 text-xs font-medium text-ink hover:underline dark:bg-accent-soft"
+                      >
+                        {SEGMENT_INFO[insights.valueSegment.segment].label}
+                      </Link>
+                    )}
                   </h1>
                   <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-secondary">
                     <li className="flex items-center gap-1.5">

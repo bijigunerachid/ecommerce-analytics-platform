@@ -29,6 +29,8 @@ class Settings:
     data_dir: str
     trigger_seconds: int
     max_offsets_per_trigger: int
+    # The streaming job recomputes insights this often; 0 turns the schedule off.
+    insights_interval_minutes: int = 30
 
     @property
     def topics(self) -> list[str]:
@@ -69,4 +71,5 @@ def load_settings(*, test: bool = False) -> Settings:
         data_dir=os.environ.get("ANALYTICS_DATA_DIR", "/data"),
         trigger_seconds=int(os.environ.get("STREAM_TRIGGER_SECONDS", "5")),
         max_offsets_per_trigger=int(os.environ.get("STREAM_MAX_OFFSETS_PER_TRIGGER", "20000")),
+        insights_interval_minutes=int(os.environ.get("INSIGHTS_INTERVAL_MINUTES", "30")),
     )

@@ -19,6 +19,11 @@ export const analyticsApi = {
   customers: (params, options) => api.get('/analytics/customers', { params, ...options }),
   inventory: (params, options) => api.get('/analytics/inventory', { params, ...options }),
   anomalies: (params, options) => api.get('/analytics/anomalies', { params, ...options }),
+  segments: (options) => api.get('/analytics/segments', options),
+  segmentCustomers: (segment, params, options) =>
+    api.get(`/analytics/segments/${segment}/customers`, { params, ...options }),
+  cohorts: (params, options) => api.get('/analytics/cohorts', { params, ...options }),
+  forecast: (options) => api.get('/analytics/forecast', options),
 };
 
 export const pipelineApi = {

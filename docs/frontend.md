@@ -111,6 +111,21 @@ src/
   with the header checkbox) and apply a status to all of them. Orders that could not change are
   listed with the reason. The selection clears when the page or a filter changes.
 
+## Insights
+
+`/insights` shows the results of the Spark insights job, with when they were computed (and a
+warning if the latest run failed):
+
+- **Sales forecast:** the last 28 days (solid) and 14 forecast days (dashed, same hue: one
+  measure on one axis) with the 80% range as a band, a legend that shows the line styles, the
+  backtest accuracy in words, and a table view.
+- **Customer segments:** customers per segment (bars) and a table with revenue share, average
+  orders, and recency, plus a plain-language description of each segment. Selecting a segment
+  lists its customers (linked to their pages).
+- **Repeat purchases:** a cohort table with a single-hue sequential scale (0 to the highest rate
+  shown), the percentage printed in every cell, and "x of y customers" on hover.
+- The customer page shows the customer's value segment, linked to this page.
+
 ## Reports and exports
 
 - **Export** menus on the Orders, Products, Customers, Inventory, and Audit log pages download

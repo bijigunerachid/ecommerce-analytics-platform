@@ -87,3 +87,16 @@ export const anomaliesQuerySchema = withRange(
     pageSize: z.coerce.number().int().min(1).max(100).default(20),
   }),
 );
+
+export const cohortsQuerySchema = z.strictObject({
+  weeks: z.coerce.number().int().min(2).max(26).default(12),
+});
+
+export const segmentParamsSchema = z.strictObject({
+  segment: z.enum(['champions', 'loyal', 'promising', 'needs_attention', 'at_risk', 'hibernating']),
+});
+
+export const segmentCustomersQuerySchema = z.strictObject({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});

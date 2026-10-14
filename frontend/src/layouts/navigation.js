@@ -1,6 +1,7 @@
 import {
   Boxes,
   FileChartColumn,
+  Lightbulb,
   LayoutDashboard,
   Package,
   ReceiptText,
@@ -19,6 +20,7 @@ export const NAV_GROUPS = [
     label: 'Overview',
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true, key: 'd' },
+      { to: '/insights', label: 'Insights', icon: Lightbulb, key: 'n' },
       { to: '/reports', label: 'Reports', icon: FileChartColumn, key: 'r' },
     ],
   },
