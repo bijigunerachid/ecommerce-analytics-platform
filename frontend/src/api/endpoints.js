@@ -40,7 +40,13 @@ export const ordersApi = {
   /** The idempotency key must stay the same when the same order is retried. */
   create: (body, idempotencyKey) =>
     api.post('/orders', body, { headers: { 'Idempotency-Key': idempotencyKey } }),
-  updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }),
+  updateStatus: (id, status, note) =>
+    api.patch(`/orders/${id}/status`, note ? { status, note } : { status }),
+  bulkUpdateStatus: (orderIds, status, note) =>
+    api.post('/orders/bulk-status', note ? { orderIds, status, note } : { orderIds, status }),
+  history: (id, options) => api.get(`/orders/${id}/history`, options),
+  notes: (id, options) => api.get(`/orders/${id}/notes`, options),
+  addNote: (id, body) => api.post(`/orders/${id}/notes`, { body }),
 };
 
 export const inventoryApi = {

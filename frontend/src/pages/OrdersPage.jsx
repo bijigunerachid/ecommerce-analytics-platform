@@ -1,4 +1,5 @@
 import { Plus, ReceiptText, X } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ordersApi } from '../api/endpoints.js';
 import { usePermissions } from '../auth/usePermissions.js';
@@ -9,13 +10,44 @@ import {
   SearchInput,
 } from '../components/data/ResourceTable.jsx';
 import { OrderStatusBadge } from '../components/ui/Badge.jsx';
+import { Button } from '../components/ui/Button.jsx';
 import { buttonClass } from '../components/ui/button-styles.js';
 import { Card } from '../components/ui/Card.jsx';
 import { FilterSelect } from '../components/ui/Field.jsx';
+import { useToast } from '../components/ui/toast-context.js';
+import { BulkStatusDialog } from '../features/orders/BulkStatusDialog.jsx';
 import { useApiQuery } from '../hooks/useApiQuery.js';
 import { cleanParams, useListParams } from '../hooks/useListParams.js';
 import { formatDateTime, formatMoney, formatNumber } from '../utils/format.js';
-import { ORDER_STATUS_LABELS } from '../utils/labels.js';
+import { ORDER_ACTION_LABELS, ORDER_STATUS_LABELS } from '../utils/labels.js';
+
+const BULK_STATUSES = ['paid', 'shipped', 'delivered', 'cancelled'];
+
+/** Bar shown above the table while orders are selected. */
+function SelectionBar({ count, onAction, onClear }) {
+  return (
+    <div
+      role="region"
+      aria-label="Selected orders"
+      className="flex flex-wrap items-center gap-2 border-b border-line bg-accent-soft/30 px-4 py-2.5 dark:bg-accent-soft/40"
+    >
+      <p className="mr-2 text-sm font-medium text-ink">{count} selected</p>
+      {BULK_STATUSES.map((status) => (
+        <Button
+          key={status}
+          size="sm"
+          variant={status === 'cancelled' ? 'ghost' : 'secondary'}
+          onClick={() => onAction(status)}
+        >
+          {status === 'cancelled' ? 'Cancel orders' : ORDER_ACTION_LABELS[status]}
+        </Button>
+      ))}
+      <Button size="sm" variant="ghost" onClick={onClear} className="ml-auto">
+        Clear selection
+      </Button>
+    </div>
+  );
+}
 
 const DATE_INPUT =
   'h-9 rounded-lg border border-line-strong bg-surface-raised px-2 text-sm text-ink';
@@ -37,6 +69,26 @@ export function OrdersPage() {
     (signal) => ordersApi.list(cleanParams({ ...params, pageSize: 20 }), { signal }),
     [params],
   );
+  const toast = useToast();
+  // The selection belongs to the rows on screen: changing the page or a filter clears it.
+  const listKey = JSON.stringify(params);
+  const [selection, setSelection] = useState({ key: listKey, ids: [] });
+  const selected = selection.key === listKey ? selection.ids : [];
+  const select = (ids) => setSelection({ key: listKey, ids });
+  const [bulkStatus, setBulkStatus] = useState(null);
+
+  function bulkDone({ status, updated }) {
+    if (updated.length > 0) {
+      const what = `${updated.length} order${updated.length === 1 ? '' : 's'}`;
+      toast.success(
+        status === 'cancelled'
+          ? `Cancelled ${what}.`
+          : `Marked ${what} as ${ORDER_STATUS_LABELS[status].toLowerCase()}.`,
+      );
+    }
+    select([]);
+    query.refetch();
+  }
 
   const columns = [
     {
@@ -155,8 +207,25 @@ export function OrdersPage() {
             </button>
           )}
         </FilterBar>
+        {selected.length > 0 && (
+          <SelectionBar
+            count={selected.length}
+            onAction={setBulkStatus}
+            onClear={() => select([])}
+          />
+        )}
         <ResourceTable
           caption="Orders"
+          selection={
+            canEdit
+              ? {
+                  selected,
+                  onChange: select,
+                  rowLabel: (o) => `Select order #${o.id}`,
+                  allLabel: 'Select all orders on this page',
+                }
+              : undefined
+          }
           query={query}
           columns={columns}
           rowKey={(o) => o.id}
@@ -167,6 +236,14 @@ export function OrdersPage() {
           onRowClick={(o) => navigate(`/orders/${o.id}`)}
         />
       </Card>
+      {bulkStatus && (
+        <BulkStatusDialog
+          status={bulkStatus}
+          orderIds={selected}
+          onClose={() => setBulkStatus(null)}
+          onDone={bulkDone}
+        />
+      )}
     </div>
   );
 }

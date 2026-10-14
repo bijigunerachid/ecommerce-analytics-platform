@@ -70,6 +70,17 @@ describe('generateSampleData', () => {
       expect(tos.at(-1)).toBe(status);
     }
 
+    // The status history mirrors the events: one row per placement and change, ending at the
+    // order's current status.
+    expect(
+      await scalar(`SELECT count(*)::int FROM orders o WHERE
+         (SELECT count(*) FROM order_status_history h WHERE h.order_id = o.id) <>
+         1 + (SELECT count(*) FROM event_outbox e
+              WHERE e.event_type = 'order.status_changed' AND e.aggregate_id = o.id::text)
+         OR (SELECT to_status FROM order_status_history h WHERE h.order_id = o.id
+             ORDER BY changed_at DESC, id DESC LIMIT 1) <> o.status`),
+    ).toBe(0);
+
     // Timestamps lie in the history window and never in the future.
     const span = (
       await ctx.db.query(

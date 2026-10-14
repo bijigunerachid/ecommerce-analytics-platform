@@ -18,6 +18,7 @@ export const pageLoaders = {
   InventoryPage: () => import('./pages/InventoryPage.jsx'),
   UsersPage: () => import('./pages/UsersPage.jsx'),
   NotFoundPage: () => import('./pages/NotFoundPage.jsx'),
+  InvoicePage: () => import('./pages/InvoicePage.jsx'),
 };
 const DashboardPage = lazyPage(pageLoaders.DashboardPage, 'DashboardPage');
 const OrdersPage = lazyPage(pageLoaders.OrdersPage, 'OrdersPage');
@@ -29,6 +30,7 @@ const CustomersPage = lazyPage(pageLoaders.CustomersPage, 'CustomersPage');
 const InventoryPage = lazyPage(pageLoaders.InventoryPage, 'InventoryPage');
 const UsersPage = lazyPage(pageLoaders.UsersPage, 'UsersPage');
 const NotFoundPage = lazyPage(pageLoaders.NotFoundPage, 'NotFoundPage');
+const InvoicePage = lazyPage(pageLoaders.InvoicePage, 'InvoicePage');
 
 const page = (element) => (
   <Suspense fallback={<LoadingState label="Loading page" className="h-96" />}>{element}</Suspense>
@@ -39,6 +41,8 @@ export const routes = [
   {
     element: <RequireAuth />,
     children: [
+      // Printable pages render without the app shell.
+      { path: 'orders/:id/invoice', element: page(<InvoicePage />) },
       {
         element: <AppLayout />,
         children: [

@@ -97,6 +97,20 @@ src/
 - **Code splitting:** the dashboard and charting library load lazily, so the sign-in page stays
   light.
 
+## Orders
+
+- **Order page:** a progress tracker (placed → paid → shipped → delivered, with the time each
+  step was reached; cancelled orders end in a cancelled step), the items, the customer, and an
+  activity feed that merges status changes and staff notes. Admins change the status from the
+  page header (with an optional note saved in the history) and add notes.
+- **Invoice:** `/orders/:id/invoice` renders a printable invoice without the app shell (Print or
+  save as PDF from the browser; the palette is always light on paper). It shows only what the
+  system records: no tax lines. A cancelled order's invoice is marked void. The seller name comes
+  from `VITE_STORE_NAME`.
+- **Bulk status changes:** admins select rows on the Orders list (one row, or the whole page
+  with the header checkbox) and apply a status to all of them. Orders that could not change are
+  listed with the reason. The selection clears when the page or a filter changes.
+
 ## App shell and navigation
 
 - **Sidebar:** sections grouped as Overview, Sales, Catalog, and Administration (admins only).
@@ -162,6 +176,7 @@ src/
 | `VITE_API_URL` | `/api` | API base URL baked into the build. Keep `/api` when the API is served from the same origin (dev proxy or a reverse proxy). |
 | `VITE_API_PROXY_TARGET` | `http://localhost:${API_PORT}` | Where the dev/preview server forwards `/api` |
 | `VITE_CURRENCY` | `EUR` | Currency used to display money values |
+| `VITE_STORE_NAME` | `Commerce Analytics` | Seller name printed on invoices |
 
 ## Screenshots
 

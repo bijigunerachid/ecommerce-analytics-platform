@@ -23,6 +23,8 @@ const CORE_TABLES = [
   'customers',
   'event_outbox',
   'order_items',
+  'order_notes',
+  'order_status_history',
   'orders',
   'pipeline_heartbeats',
   'products',
@@ -304,5 +306,62 @@ describe('event outbox', () => {
     expect(rows[0].event_id).toMatch(/^[0-9a-f-]{36}$/);
     expect(rows[0].published_at).toBeNull();
     expect(rows[0].attempts).toBe(0);
+  });
+});
+
+describe('order lifecycle migration', () => {
+  it('backfills status history from the outbox events of existing orders', async () => {
+    // Go back to before the migration, create an order with its events, then migrate up.
+    await migrate(dbConfig, 'down', { count: 1 });
+    const customerId = await insertCustomer();
+    const orderId = Number(await insertOrder(customerId));
+    await client.query(`UPDATE orders SET status = 'shipped' WHERE id = $1`, [orderId]);
+    const event = (type, payload, at) =>
+      client.query(
+        `INSERT INTO event_outbox (event_type, aggregate_type, aggregate_id, payload, occurred_at)
+         VALUES ($1, 'order', $2, $3, $4)`,
+        [type, String(orderId), payload, at],
+      );
+    await event('order.created', { orderId }, '2026-01-01T10:00:00Z');
+    for (const [from, to, at] of [
+      ['pending', 'paid', '2026-01-01T10:05:00Z'],
+      ['paid', 'shipped', '2026-01-02T09:00:00Z'],
+    ]) {
+      await event(
+        'order.status_changed',
+        { orderId, fromStatus: from, toStatus: to, changedAt: at },
+        at,
+      );
+    }
+    // An order without events still gets its placement and current status.
+    const orphanId = Number(await insertOrder(customerId, 'order-key-2'));
+    await client.query(`UPDATE orders SET status = 'paid' WHERE id = $1`, [orphanId]);
+
+    await migrate(dbConfig, 'up');
+
+    const { rows } = await client.query(
+      `SELECT order_id::int, from_status, to_status, changed_at
+       FROM order_status_history ORDER BY order_id, changed_at, id`,
+    );
+    expect(rows.map((r) => [r.order_id, r.from_status, r.to_status])).toEqual([
+      [orderId, null, 'pending'],
+      [orderId, 'pending', 'paid'],
+      [orderId, 'paid', 'shipped'],
+      [orphanId, null, 'pending'],
+      [orphanId, 'pending', 'paid'],
+    ]);
+    expect(rows[2].changed_at.toISOString()).toBe('2026-01-02T09:00:00.000Z');
+  });
+
+  it('rejects a history row that does not change the status', async () => {
+    const orderId = await insertOrder(await insertCustomer());
+    await expectPgError(
+      client.query(
+        `INSERT INTO order_status_history (order_id, from_status, to_status) VALUES ($1, 'paid', 'paid')`,
+        [orderId],
+      ),
+      PG_CHECK_VIOLATION,
+      'order_status_history_changes_status',
+    );
   });
 });

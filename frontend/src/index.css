@@ -120,6 +120,23 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Printing (invoices) always uses the light palette on white paper. */
+@media print {
+  :root,
+  .dark {
+    color-scheme: light;
+    --page: #ffffff;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-sunken: #f0efec;
+    --ink: #0b0b0b;
+    --ink-secondary: #52514e;
+    --ink-muted: #6f6d68;
+    --line: #e1e0d9;
+    --line-strong: #c3c2b7;
+  }
+}
+
 /* Placeholder blocks shown while data loads (the shimmer stops for reduced motion). */
 .skeleton {
   background: linear-gradient(

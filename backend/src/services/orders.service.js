@@ -138,6 +138,12 @@ export function createOrdersService({
         userId,
       });
       await ordersRepository.insertItems(client, orderId, lines);
+      await ordersRepository.insertStatusHistory(client, {
+        orderId,
+        fromStatus: null,
+        toStatus: 'pending',
+        userId,
+      });
 
       for (const line of lines) {
         await stockMovementsRepository.apply(client, {
@@ -154,6 +160,55 @@ export function createOrdersService({
       await outboxRepository.add(client, orderCreated(order));
       return { order, replayed: false };
     });
+  }
+
+  /** Applies one status change inside an open transaction (see updateStatus). */
+  async function changeStatus(client, id, newStatus, { userId, note }) {
+    const locked = await ordersRepository.lockById(client, id);
+    if (!locked) throw notFound('Order not found');
+
+    const fromStatus = locked.status;
+    if (!canTransition(fromStatus, newStatus)) {
+      const allowed = allowedTransitions(fromStatus);
+      throw new HttpError(
+        409,
+        'INVALID_STATUS_TRANSITION',
+        `Cannot change order status from ${fromStatus} to ${newStatus}` +
+          (allowed.length ? ` (allowed: ${allowed.join(', ')})` : ' (final status)'),
+      );
+    }
+
+    const changedAt = await ordersRepository.updateStatus(client, id, newStatus);
+    await ordersRepository.insertStatusHistory(client, {
+      orderId: id,
+      fromStatus,
+      toStatus: newStatus,
+      userId,
+      note,
+      changedAt,
+    });
+    const order = await ordersRepository.findById(id, client);
+
+    if (newStatus === 'cancelled') {
+      const items = [...order.items].sort((a, b) => a.productId - b.productId);
+      for (const item of items) {
+        await stockMovementsRepository.apply(client, {
+          productId: item.productId,
+          quantityChange: item.quantity,
+          reason: 'cancellation',
+          orderId: id,
+          idempotencyKey: `order-${id}-cancel-product-${item.productId}`,
+          userId,
+        });
+      }
+    }
+
+    await outboxRepository.add(client, orderStatusChanged({ order, fromStatus, changedAt }));
+    return order;
+  }
+
+  async function requireOrder(id) {
+    if (!(await ordersRepository.exists(id))) throw notFound('Order not found');
   }
 
   return {
@@ -188,45 +243,50 @@ export function createOrdersService({
     },
 
     /**
-     * Moves an order to a new status if the transition is allowed. Cancelling restores the
-     * ordered quantities to stock through the inventory ledger.
+     * Moves an order to a new status if the transition is allowed, recording who did it and an
+     * optional note in the status history. Cancelling restores the ordered quantities to stock
+     * through the inventory ledger.
      */
-    async updateStatus(id, newStatus, { userId }) {
-      return withTransaction(db, async (client) => {
-        const locked = await ordersRepository.lockById(client, id);
-        if (!locked) throw notFound('Order not found');
+    async updateStatus(id, newStatus, { userId, note }) {
+      return withTransaction(db, (client) => changeStatus(client, id, newStatus, { userId, note }));
+    },
 
-        const fromStatus = locked.status;
-        if (!canTransition(fromStatus, newStatus)) {
-          const allowed = allowedTransitions(fromStatus);
-          throw new HttpError(
-            409,
-            'INVALID_STATUS_TRANSITION',
-            `Cannot change order status from ${fromStatus} to ${newStatus}` +
-              (allowed.length ? ` (allowed: ${allowed.join(', ')})` : ' (final status)'),
+    /**
+     * Applies the same status change to several orders. Each order changes in its own
+     * transaction (in id order), so one order that cannot change does not block the others;
+     * the result lists what changed and why the rest did not.
+     */
+    async bulkUpdateStatus(orderIds, newStatus, { userId, note }) {
+      const updated = [];
+      const failed = [];
+      for (const id of [...new Set(orderIds)].sort((a, b) => a - b)) {
+        try {
+          await withTransaction(db, (client) =>
+            changeStatus(client, id, newStatus, { userId, note }),
           );
+          updated.push(id);
+        } catch (err) {
+          if (!(err instanceof HttpError)) throw err;
+          failed.push({ orderId: id, code: err.code, message: err.message });
         }
+      }
+      return { status: newStatus, updated, failed };
+    },
 
-        const changedAt = await ordersRepository.updateStatus(client, id, newStatus);
-        const order = await ordersRepository.findById(id, client);
+    async history(id) {
+      await requireOrder(id);
+      return ordersRepository.listStatusHistory(id);
+    },
 
-        if (newStatus === 'cancelled') {
-          const items = [...order.items].sort((a, b) => a.productId - b.productId);
-          for (const item of items) {
-            await stockMovementsRepository.apply(client, {
-              productId: item.productId,
-              quantityChange: item.quantity,
-              reason: 'cancellation',
-              orderId: id,
-              idempotencyKey: `order-${id}-cancel-product-${item.productId}`,
-              userId,
-            });
-          }
-        }
+    async notes(id) {
+      await requireOrder(id);
+      return ordersRepository.listNotes(id);
+    },
 
-        await outboxRepository.add(client, orderStatusChanged({ order, fromStatus, changedAt }));
-        return order;
-      });
+    async addNote(id, { body, userId }) {
+      await requireOrder(id);
+      const noteId = await ordersRepository.insertNote(id, { body, userId });
+      return (await ordersRepository.listNotes(id)).find((n) => n.id === noteId);
     },
   };
 }
