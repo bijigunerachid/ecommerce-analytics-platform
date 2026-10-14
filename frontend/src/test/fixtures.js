@@ -327,6 +327,65 @@ export const customer = {
 };
 export const customersList = page([customer]);
 
+const months = Array.from({ length: 12 }, (_, i) => ({
+  month: new Date(Date.UTC(2025, 3 + i, 1)).toISOString(),
+  orders: i === 11 ? 2 : 0,
+  spent: i === 11 ? '1348.00' : '0',
+}));
+
+export const customerInsights = {
+  insights: {
+    customerId: 5,
+    segment: 'returning',
+    orders: 3,
+    cancelledOrders: 1,
+    netOrders: 2,
+    lifetimeValue: '1348.00',
+    averageOrderValue: '674.00',
+    firstOrderAt: '2026-02-01T10:00:00.000Z',
+    lastOrderAt: '2026-03-01T10:00:00.000Z',
+    monthly: months,
+    topProducts: [
+      {
+        productId: 10,
+        sku: 'ELC-LAPTOP-14',
+        name: 'Aurora 14" Laptop',
+        units: 1,
+        spent: '1299.00',
+      },
+      { productId: 11, sku: 'ELC-MOUSE-WL', name: 'Wireless Mouse', units: 2, spent: '49.00' },
+    ],
+  },
+};
+
+const days = Array.from({ length: 30 }, (_, i) => ({
+  day: new Date(Date.UTC(2026, 1, 10 + i)).toISOString(),
+  units: i % 3 === 0 ? 2 : 0,
+  revenue: i % 3 === 0 ? '2598.00' : '0',
+  orders: i % 3 === 0 ? 1 : 0,
+  stockEnd: 23 - Math.floor(i / 3) * 2,
+}));
+
+export const productInsights = {
+  insights: {
+    productId: 10,
+    range: { days: 30, from: days[0].day, to: days.at(-1).day },
+    unitsSold: 20,
+    revenue: '25980.00',
+    orders: 10,
+    stock: 3,
+    reorderLevel: 8,
+    restock: {
+      dailyUnits: 0.67,
+      daysOfCover: 4.5,
+      targetStock: 28,
+      suggestedQuantity: 25,
+      needsRestock: true,
+    },
+    daily: days,
+  },
+};
+
 export const order = {
   id: 42,
   customerId: 5,

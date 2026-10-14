@@ -78,12 +78,8 @@ describe('command palette', () => {
     expect(screen.getByRole('group', { name: 'Products' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Orders' })).toBeInTheDocument();
     await user.click(customer);
-    await waitFor(() => expect(router.state.location.pathname).toBe('/customers'));
-    expect(router.state.location.search).toBe('?search=alice%40example.com');
-    // The list's search box follows the URL.
-    expect(await screen.findByRole('searchbox', { name: 'Search customers' })).toHaveValue(
-      'alice@example.com',
-    );
+    await waitFor(() => expect(router.state.location.pathname).toBe('/customers/5'));
+    expect(await screen.findByRole('heading', { name: /Alice Martin/ })).toBeInTheDocument();
   });
 
   it('hides admin-only actions from analysts', async () => {

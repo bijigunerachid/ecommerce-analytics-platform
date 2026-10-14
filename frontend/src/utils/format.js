@@ -104,3 +104,11 @@ export function formatRelative(iso, now = Date.now()) {
   if (hours < 48) return `${hours} h ago`;
   return `${Math.round(hours / 24)} days ago`;
 }
+
+const MONTH = new Intl.DateTimeFormat(LOCALE, { month: 'short', year: 'numeric', timeZone: 'UTC' });
+const MONTH_SHORT = new Intl.DateTimeFormat(LOCALE, { month: 'short', timeZone: 'UTC' });
+
+/** UTC month of a timestamp: "Mar 2026", or "Mar" with `short`. */
+export function formatMonth(iso, { short = false } = {}) {
+  return (short ? MONTH_SHORT : MONTH).format(new Date(iso));
+}

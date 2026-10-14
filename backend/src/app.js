@@ -6,6 +6,7 @@ import { createAnalyticsController } from './controllers/analytics.controller.js
 import { createAuthController } from './controllers/auth.controller.js';
 import { createCategoriesController } from './controllers/categories.controller.js';
 import { createCustomersController } from './controllers/customers.controller.js';
+import { createInsightsController } from './controllers/insights.controller.js';
 import { createHealthController } from './controllers/health.controller.js';
 import { createInventoryController } from './controllers/inventory.controller.js';
 import { createPipelineController } from './controllers/pipeline.controller.js';
@@ -17,6 +18,7 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { createAnalyticsRepository } from './repositories/analytics.repository.js';
 import { createCategoriesRepository } from './repositories/categories.repository.js';
 import { createCustomersRepository } from './repositories/customers.repository.js';
+import { createInsightsRepository } from './repositories/insights.repository.js';
 import { createOrdersRepository } from './repositories/orders.repository.js';
 import { createOutboxRepository } from './repositories/outbox.repository.js';
 import { createPipelineRepository } from './repositories/pipeline.repository.js';
@@ -26,6 +28,7 @@ import { createUsersRepository } from './repositories/users.repository.js';
 import { createAnalyticsRouter } from './routes/analytics.routes.js';
 import { createAuthRouter } from './routes/auth.routes.js';
 import { createCrudRouter } from './routes/crud.routes.js';
+import { createInsightsRouter } from './routes/insights.routes.js';
 import { createInventoryRouter } from './routes/inventory.routes.js';
 import { createPipelineRouter } from './routes/pipeline.routes.js';
 import { createOrdersRouter } from './routes/orders.routes.js';
@@ -34,6 +37,7 @@ import { createAnalyticsService } from './services/analytics.service.js';
 import { createAuthService } from './services/auth.service.js';
 import { createCategoriesService } from './services/categories.service.js';
 import { createCustomersService } from './services/customers.service.js';
+import { createInsightsService } from './services/insights.service.js';
 import { createInventoryService } from './services/inventory.service.js';
 import { createPipelineService } from './services/pipeline.service.js';
 import { createOrdersService } from './services/orders.service.js';
@@ -72,9 +76,10 @@ export function createApp({ db, config }) {
   const outboxRepository = createOutboxRepository();
   const stockMovementsRepository = createStockMovementsRepository({ db, outboxRepository });
   const customersRepository = createCustomersRepository(db);
+  const productsRepository = createProductsRepository(db);
   const productsService = createProductsService({
     db,
-    productsRepository: createProductsRepository(db),
+    productsRepository,
     stockMovementsRepository,
   });
   const customersService = createCustomersService({ customersRepository });
@@ -86,6 +91,11 @@ export function createApp({ db, config }) {
     outboxRepository,
   });
   const inventoryService = createInventoryService({ db, stockMovementsRepository });
+  const insightsService = createInsightsService({
+    insightsRepository: createInsightsRepository(db),
+    customersRepository,
+    productsRepository,
+  });
 
   const healthController = createHealthController({ db });
   const authController = createAuthController({ authService, ...auth });
@@ -95,6 +105,7 @@ export function createApp({ db, config }) {
   const customersController = createCustomersController({ customersService });
   const ordersController = createOrdersController({ ordersService });
   const inventoryController = createInventoryController({ inventoryService });
+  const insightsController = createInsightsController({ insightsService });
   const analyticsController = createAnalyticsController({
     analyticsService: createAnalyticsService({
       analyticsRepository: createAnalyticsRepository(db),
@@ -131,6 +142,8 @@ export function createApp({ db, config }) {
     }),
   );
   api.use('/users', createUsersRouter({ usersController, requireAuth: authenticate }));
+  // Before the resource routers, which would treat "insights" as an unknown sub-path.
+  api.use(createInsightsRouter({ insightsController, requireAuth: authenticate }));
   api.use(
     '/categories',
     createCrudRouter({

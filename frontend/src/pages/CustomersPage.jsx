@@ -156,9 +156,9 @@ export function CustomersPage() {
       sortKey: 'name',
       render: (c) => (
         <div>
-          <p className="font-medium">
+          <Link to={`/customers/${c.id}`} className="font-medium hover:text-accent hover:underline">
             {c.firstName} {c.lastName}
-          </p>
+          </Link>
           <p className="text-xs text-ink-muted">{c.email}</p>
         </div>
       ),
