@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderApp } from '../test/render.jsx';
 import { API, server } from '../test/server.js';
+import { formatDay } from '../utils/format.js';
 
 let downloads;
 
@@ -88,9 +89,9 @@ describe('reports', () => {
     const print = vi.spyOn(window, 'print').mockImplementation(() => {});
     const { user } = renderApp('/reports?from=2026-02-10&to=2026-03-11');
     expect(await screen.findByRole('heading', { name: 'Sales report' })).toBeInTheDocument();
-    expect(
-      screen.getByText(/10 Feb 2026 to 11 Mar 2026 \(UTC\)\. Prepared by Ada Admin/),
-    ).toBeInTheDocument();
+    // Dates follow the browser's locale (CI runs in en-US), so build the expected text the same way.
+    const period = `${formatDay('2026-02-10')} to ${formatDay('2026-03-11')} (UTC). Prepared by Ada Admin`;
+    expect(screen.getByText((text) => text.startsWith(period))).toBeInTheDocument();
 
     expect(await screen.findByText('Net revenue')).toBeInTheDocument();
     expect(screen.getByText('+12.4% vs previous period')).toBeInTheDocument();
