@@ -251,6 +251,48 @@ export const pipelineHealth = {
   checkedAt: '2026-03-11T10:00:00.000Z',
 };
 
+export const notificationsList = {
+  unreadCount: 1,
+  notifications: [
+    {
+      id: 2,
+      kind: 'low_stock',
+      severity: 'warning',
+      title: 'Aurora 14" Laptop is low on stock',
+      body: '3 units left (reorder level 8).',
+      link: '/products/10',
+      createdAt: '2026-03-11T09:00:00.000Z',
+      unread: true,
+    },
+    {
+      id: 1,
+      kind: 'anomaly',
+      severity: 'critical',
+      title: 'Unusually large order',
+      body: 'Order total 32475.00 is 12.8x the 99th percentile',
+      link: '/orders/42',
+      createdAt: '2026-03-10T09:00:00.000Z',
+      unread: false,
+    },
+  ],
+};
+
+export const activity = {
+  activity: [
+    {
+      type: 'order.created',
+      eventId: 'e1',
+      occurredAt: '2026-03-11T09:30:00.000Z',
+      orderId: 42,
+      customerId: 5,
+      customerName: 'Alice Martin',
+      totalAmount: '1348.00',
+      fromStatus: null,
+      toStatus: null,
+    },
+  ],
+};
+
 // ---- Management resources ----
 const page = (data) => ({
   data,

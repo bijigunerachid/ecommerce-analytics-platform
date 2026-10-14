@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button.jsx';
 import { CustomersPanel } from '../features/dashboard/CustomersPanel.jsx';
 import { DateRangeControl } from '../features/dashboard/DateRangeControl.jsx';
 import { KpiTiles } from '../features/dashboard/KpiTiles.jsx';
+import { LiveActivityPanel } from '../features/dashboard/LiveActivityPanel.jsx';
 import {
   AnomaliesPanel,
   InventoryPanel,
@@ -153,7 +154,10 @@ export function DashboardPage() {
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
         <InventoryPanel range={range} refreshKey={refreshKey} />
         <AnomaliesPanel range={range} refreshKey={refreshKey} />
-        <PipelinePanel refreshKey={refreshKey} />
+        <div className="flex flex-col gap-4">
+          <LiveActivityPanel refreshKey={refreshKey} />
+          <PipelinePanel refreshKey={refreshKey} />
+        </div>
       </div>
     </div>
   );

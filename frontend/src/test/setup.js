@@ -1,7 +1,10 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup, configure } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll } from 'vitest';
+import { FakeEventSource } from './fake-event-source.js';
 import { server } from './server.js';
+
+window.EventSource = FakeEventSource;
 
 // jsdom lacks these browser APIs; charts and the theme provider use them.
 // Many test files render the whole app in parallel; allow well over the 1 s default.
@@ -34,6 +37,7 @@ beforeAll(async () => {
 afterEach(() => {
   cleanup();
   server.resetHandlers();
+  FakeEventSource.reset();
   localStorage.clear();
   document.documentElement.classList.remove('dark');
   mockPrefersDark(false);

@@ -30,6 +30,9 @@ All notable changes to this project are documented here. The format follows
 - Printable invoices (`/orders/:id/invoice`).
 - Customer pages: segment, lifetime value, monthly spend, most-bought products, and orders
   (`GET /api/customers/:id/insights`).
+- Live updates over Server-Sent Events (`GET /api/stream`), fed by PostgreSQL `LISTEN/NOTIFY`:
+  a live activity feed on the dashboard and a notification bell for low stock, out of stock,
+  and detected anomalies (created by database triggers; existing anomalies are backfilled).
 - Product pages: daily sales, end-of-day stock rebuilt from the ledger, days of stock left, and
   a one-click restock of the suggested quantity (`GET /api/products/:id/insights`).
 

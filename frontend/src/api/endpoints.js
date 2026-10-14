@@ -65,3 +65,12 @@ export const usersApi = {
   list: (options) => api.get('/users', options),
   create: (body) => api.post('/users', body),
 };
+
+export const notificationsApi = {
+  list: (params, options) => api.get('/notifications', { params, ...options }),
+  markAllRead: () => api.post('/notifications/read'),
+};
+
+export const activityApi = {
+  recent: (params, options) => api.get('/activity', { params, ...options }),
+};

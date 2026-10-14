@@ -35,6 +35,11 @@ export const handlers = [
   http.get(`${API}/analytics/inventory`, () => HttpResponse.json(f.inventory)),
   http.get(`${API}/analytics/anomalies`, () => HttpResponse.json(f.anomalies)),
   http.get(`${API}/pipeline/health`, () => HttpResponse.json(f.pipelineHealth)),
+  http.get(`${API}/notifications`, () => HttpResponse.json(f.notificationsList)),
+  http.post(`${API}/notifications/read`, () =>
+    HttpResponse.json({ unreadCount: 0, lastReadAt: '2026-03-11T10:00:00.000Z' }),
+  ),
+  http.get(`${API}/activity`, () => HttpResponse.json(f.activity)),
   http.get(`${API}/categories`, () => HttpResponse.json(f.categoriesList)),
   http.get(`${API}/products`, () => HttpResponse.json(f.productsList)),
   http.get(`${API}/customers`, () => HttpResponse.json(f.customersList)),
