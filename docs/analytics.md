@@ -173,5 +173,8 @@ about the same. Expect dashboards to reflect new orders within roughly 10 second
   this project's scale; a much larger deployment would partition that step.
 - Velocity windows are fixed 10-minute buckets, so a burst that straddles a bucket boundary may
   go undetected.
-- The official `apache/spark` image (Ubuntu 22.04) reports known CVEs in OS packages. The
-  container is only reachable from localhost (Spark UI on 127.0.0.1:4040).
+- Image security: the Dockerfile applies pending Ubuntu security updates (65 were missing from the
+  upstream image when this was checked) and upgrades pip, setuptools, and wheel; `pip-audit`
+  reports no known vulnerabilities in the Python packages. Vulnerability scanners still report
+  issues in libraries bundled with Apache Spark itself (Java JARs), which only a newer Spark
+  release can fix. The container is reachable only from localhost (Spark UI on 127.0.0.1:4040).
