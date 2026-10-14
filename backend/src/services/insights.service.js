@@ -39,6 +39,7 @@ export function restockAdvice({ stock, reorderLevel, recentUnits }) {
 }
 
 export function createInsightsService({
+  predictiveService,
   insightsRepository,
   customersRepository,
   productsRepository,
@@ -47,10 +48,11 @@ export function createInsightsService({
     async customer(id, now = new Date()) {
       const customer = await customersRepository.findById(id);
       if (!customer) throw notFound('Customer not found');
-      const [totals, monthly, topProducts] = await Promise.all([
+      const [totals, monthly, topProducts, valueSegment] = await Promise.all([
         insightsRepository.customerTotals(id),
         insightsRepository.customerMonthly(id),
         insightsRepository.customerTopProducts(id),
+        predictiveService?.customerSegment(id) ?? null,
       ]);
       const netOrders = totals.orders - totals.cancelledOrders;
       const spentCents = toCents(totals.spent);
@@ -66,6 +68,8 @@ export function createInsightsService({
         lastOrderAt: totals.lastOrderAt,
         monthly,
         topProducts,
+        // RFM segment from the Spark insights job (null until it has run).
+        valueSegment,
       };
     },
 

@@ -98,6 +98,7 @@ services:
       LOGIN_RATE_LIMIT_WINDOW_MINUTES: ${LOGIN_RATE_LIMIT_WINDOW_MINUTES:-15}
       KAFKA_BROKERS: kafka:29092
       KAFKA_TOPIC_PREFIX: ${KAFKA_TOPIC_PREFIX:-ecommerce}
+      INSIGHTS_INTERVAL_MINUTES: ${INSIGHTS_INTERVAL_MINUTES:-30}
     command: ["node", "scripts/migrate.js", "up"]
 
   # REST API. Not published on the host: the web container proxies /api to it.
@@ -191,6 +192,19 @@ services:
     healthcheck:
       disable: true
     command: ["spark-submit", "--driver-memory", "1g", "bin/rebuild_aggregates.py"]
+
+  # Recompute customer segments, cohorts, and the forecast now (the streaming job also does
+  # it every INSIGHTS_INTERVAL_MINUTES):
+  #   docker compose run --rm spark-insights
+  spark-insights:
+    <<: *analytics
+    container_name: ecommerce-spark-insights
+    restart: "no"
+    profiles: [batch]
+    ports: []
+    healthcheck:
+      disable: true
+    command: ["spark-submit", "--driver-memory", "1g", "bin/compute_insights.py"]
 
   # Analytics test suite (uses the test database and a temporary data directory):
   #   docker compose run --rm analytics-tests

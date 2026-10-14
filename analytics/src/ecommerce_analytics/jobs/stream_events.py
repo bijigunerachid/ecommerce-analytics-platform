@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import time
 
 import psycopg
@@ -25,6 +26,7 @@ from ..heartbeat import kafka_lag, write_heartbeat
 from ..postgres_sink import process_batch
 from ..spark import create_spark
 from ..validation import invalid_records, parse_events, valid_events
+from .compute_insights import compute as compute_insights
 
 JOB_NAME = "stream-events"
 log = logging.getLogger("stream_events")
@@ -125,6 +127,32 @@ class HeartbeatListener(StreamingQueryListener):
         self._beat("error" if event.exception else "stopped", lastError=event.exception)
 
 
+INSIGHTS_FIRST_RUN_SECONDS = 60
+
+
+def start_insights_schedule(spark, settings: Settings) -> threading.Event | None:
+    """Recomputes insights in a background thread on the streaming job's Spark session.
+
+    The first run waits a minute so the stream can catch up after a start. A failed run is
+    logged (and recorded by the job) and retried at the next interval; it never stops the stream.
+    """
+    if settings.insights_interval_minutes <= 0:
+        return None
+    stop = threading.Event()
+
+    def loop() -> None:
+        delay = INSIGHTS_FIRST_RUN_SECONDS
+        while not stop.wait(delay):
+            try:
+                log.info("Insights updated: %s", compute_insights(spark, settings))
+            except Exception:  # noqa: BLE001 - keep the schedule alive
+                log.exception("Insights run failed")
+            delay = settings.insights_interval_minutes * 60
+
+    threading.Thread(target=loop, name="insights-schedule", daemon=True).start()
+    return stop
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     settings = load_settings()
@@ -152,6 +180,7 @@ def main() -> None:
         .start()
     )
     log.info("Streaming from %s via %s", settings.topics, settings.kafka_bootstrap)
+    start_insights_schedule(spark, settings)
     query.awaitTermination()
 
 

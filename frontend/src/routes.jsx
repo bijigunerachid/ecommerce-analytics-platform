@@ -24,6 +24,7 @@ export const pageLoaders = {
   AccountPage: () => import('./pages/AccountPage.jsx'),
   AuditLogPage: () => import('./pages/AuditLogPage.jsx'),
   ReportsPage: () => import('./pages/ReportsPage.jsx'),
+  InsightsPage: () => import('./pages/InsightsPage.jsx'),
 };
 const DashboardPage = lazyPage(pageLoaders.DashboardPage, 'DashboardPage');
 const OrdersPage = lazyPage(pageLoaders.OrdersPage, 'OrdersPage');
@@ -41,6 +42,7 @@ const ProductDetailPage = lazyPage(pageLoaders.ProductDetailPage, 'ProductDetail
 const AccountPage = lazyPage(pageLoaders.AccountPage, 'AccountPage');
 const AuditLogPage = lazyPage(pageLoaders.AuditLogPage, 'AuditLogPage');
 const ReportsPage = lazyPage(pageLoaders.ReportsPage, 'ReportsPage');
+const InsightsPage = lazyPage(pageLoaders.InsightsPage, 'InsightsPage');
 
 const page = (element) => (
   <Suspense fallback={<LoadingState label="Loading page" className="h-96" />}>{element}</Suspense>
@@ -67,6 +69,7 @@ export const routes = [
           { path: 'inventory', element: page(<InventoryPage />) },
           { path: 'account', element: page(<AccountPage />) },
           { path: 'reports', element: page(<ReportsPage />) },
+          { path: 'insights', element: page(<InsightsPage />) },
           // UI-level guards; the API enforces the same roles.
           {
             element: <RequireAuth roles={['admin']} />,

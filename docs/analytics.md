@@ -141,6 +141,37 @@ On 90 days of generated data (5,733 orders) it raised **122 alerts**, almost all
 With the current rules the same history produces **7 alerts**: the three planted anomalies, the
 revenue spike on the day of the planted order, and three medium spikes on unusually busy days.
 
+## Customer insights and forecast
+
+The insights job (`jobs/compute_insights.py`) reads the Parquet history, deduplicates it by
+event id, and computes three things from orders that were not cancelled:
+
+| Result | Table | How |
+| --- | --- | --- |
+| Customer segments (RFM) | `analytics_customer_segments` | Recency (days since the last order), frequency (orders), and monetary value (spend) are each scored 1–5 by percentile rank (ties share a score, so results are deterministic; more recent / more orders / more spend = higher). Segments, first match wins: **champions** R≥4, F≥4, M≥4; **loyal** R≥3, F≥3; **promising** R≥4; **needs attention** R=3; **at risk** F≥3; **hibernating** otherwise. |
+| Weekly cohorts | `analytics_cohort_retention` | Customers grouped by the week (Monday, UTC) of their first order; for each later week, how many of them ordered again. |
+| Sales forecast | `analytics_sales_forecast` | Net revenue for the next 14 days: the average of the last 28 complete days × a weekday factor (from the last 56 days, shrunk halfway towards 1). The 80% interval comes from the model's own recent one-day-ahead errors. Needs 42 days of history. |
+
+Accuracy is measured honestly with a backtest: the model is fitted without the last 14 complete
+days and predicts them. The page reports WAPE (total absolute error ÷ total revenue). On the
+generated sample data it is about 35%, inflated by the planted revenue spike inside the test
+window; a simple model is the right starting point for a few months of history, and the backtest
+shows when a better one is worth the effort.
+
+Each run replaces all three tables in one transaction and adds a row to
+`analytics_insights_runs` (also for failures, with the error), which the API uses to show when
+the results were computed.
+
+**When it runs:** inside the streaming job, on its Spark session (no second JVM), a minute after
+start and then every `INSIGHTS_INTERVAL_MINUTES` (default 30; 0 turns it off). A failed run is
+logged and retried at the next interval; it never stops the stream. On demand:
+
+```powershell
+docker compose run --rm spark-insights
+```
+
+On the sample data (5,700 orders, 31,000 events) a run takes about 20 seconds.
+
 ## Health and lag
 
 The job writes a `spark-streaming` row to `pipeline_heartbeats` on every progress report, and
@@ -166,6 +197,12 @@ The cost is per batch, not per event: a batch of 20,000 events (`maxOffsetsPerTr
 about the same. Expect dashboards to reflect new orders within roughly 10 seconds.
 
 ## Known limitations
+
+- Insights read the Parquet history while the stream may be writing a new batch. A run that
+  catches a half-written batch fails and is retried at the next interval (results are replaced
+  only by complete runs).
+- RFM scores are relative to the current customer base (percentiles), so a customer's segment
+  can change when others buy more, even if their own behavior does not.
 
 - Product performance is gross (at order time). Cancellations reduce hourly and customer revenue
   but not per-product figures, because `order.status_changed` does not carry line items.

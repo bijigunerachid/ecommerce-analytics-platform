@@ -30,6 +30,10 @@ All notable changes to this project are documented here. The format follows
 - Printable invoices (`/orders/:id/invoice`).
 - Customer pages: segment, lifetime value, monthly spend, most-bought products, and orders
   (`GET /api/customers/:id/insights`).
+- Spark insights job: customer segments (RFM), weekly cohort retention, and a 14-day sales
+  forecast with an 80% interval and a measured backtest accuracy; runs every 30 minutes inside
+  the streaming job or on demand (`docker compose run --rm spark-insights`). New Insights page
+  and `GET /api/analytics/{segments,cohorts,forecast}`.
 - CSV exports (plain or Excel-friendly) of orders, products, customers, stock movements, the
   audit log, daily sales, and top products, using the filters on screen; protected against CSV
   injection, limited to 100,000 rows, and recorded in the audit log (`GET /api/exports/:name.csv`).

@@ -594,6 +594,25 @@ decimal, e.g. `12.5` for 12.5%.
 Revenue series buckets are UTC timestamps; weekly buckets start on Monday. Empty buckets are
 included with zeros, so charts have no gaps.
 
+## Segments, cohorts, and forecast (Spark insights)
+
+Results of the Spark insights job (see [analytics.md](analytics.md#customer-insights-and-forecast)),
+any signed-in role. Every response carries `run`:
+`{ computedAt, asOf, lastError: { at, message } | null }`. `computedAt` is `null` until the
+first successful run; `lastError` is set when the most recent run failed (the previous results
+are still returned).
+
+| Method & path | Notes |
+| --- | --- |
+| `GET /analytics/segments` | All six segments with `customers`, `customerShare`, `revenue`, `revenueShare`, `avgRecencyDays`, `avgOrders`, `avgSpend`; plus `totalCustomers`, `totalRevenue` |
+| `GET /analytics/segments/:segment/customers` | Customers of a segment, biggest spenders first, paginated: `customerId`, `name`, `email`, `recencyDays`, `frequency`, `monetary`, `scores: { r, f, m }` |
+| `GET /analytics/cohorts?weeks=12` | The most recent `weeks` weekly cohorts (2–26): `{ cohortWeek, size, retention: [{ weekOffset, active, rate }] }` |
+| `GET /analytics/forecast` | `forecast: [{ day, forecast, lower, upper }]` (14 days, 80% interval), `actual`: net revenue of the 28 days before, and `model: { name, trainingDays, backtestWape, skipped }` |
+
+Segments are `champions`, `loyal`, `promising`, `needs_attention`, `at_risk`, `hibernating`.
+`GET /customers/:id/insights` also returns `valueSegment: { segment, scores, recencyDays }`
+(`null` before the first run).
+
 ## Pipeline health
 
 ### `GET /pipeline/health` (any signed-in user)

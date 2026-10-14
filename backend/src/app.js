@@ -8,6 +8,7 @@ import { createCategoriesController } from './controllers/categories.controller.
 import { createCustomersController } from './controllers/customers.controller.js';
 import { createAuditController } from './controllers/audit.controller.js';
 import { createExportsController } from './controllers/exports.controller.js';
+import { createPredictiveController } from './controllers/predictive.controller.js';
 import { createInsightsController } from './controllers/insights.controller.js';
 import { createNotificationsController } from './controllers/notifications.controller.js';
 import { createStreamController } from './controllers/stream.controller.js';
@@ -26,6 +27,7 @@ import { createExportDefinitions } from './exports/definitions.js';
 import { auditContext } from './middleware/audit.js';
 import { createAuditRepository } from './repositories/audit.repository.js';
 import { createInsightsRepository } from './repositories/insights.repository.js';
+import { createPredictiveRepository } from './repositories/predictive.repository.js';
 import { createNotificationsRepository } from './repositories/notifications.repository.js';
 import { createEventHub } from './realtime/event-hub.js';
 import { createOrdersRepository } from './repositories/orders.repository.js';
@@ -50,6 +52,7 @@ import { createAuthService } from './services/auth.service.js';
 import { createCategoriesService } from './services/categories.service.js';
 import { createCustomersService } from './services/customers.service.js';
 import { createInsightsService } from './services/insights.service.js';
+import { createPredictiveService } from './services/predictive.service.js';
 import { createInventoryService } from './services/inventory.service.js';
 import { createPipelineService } from './services/pipeline.service.js';
 import { createOrdersService } from './services/orders.service.js';
@@ -108,7 +111,11 @@ export function createApp({ db, config }) {
     outboxRepository,
   });
   const inventoryService = createInventoryService({ db, stockMovementsRepository });
+  const predictiveService = createPredictiveService({
+    predictiveRepository: createPredictiveRepository(db),
+  });
   const insightsService = createInsightsService({
+    predictiveService,
     insightsRepository: createInsightsRepository(db),
     customersRepository,
     productsRepository,
@@ -138,6 +145,7 @@ export function createApp({ db, config }) {
     analyticsRepository: createAnalyticsRepository(db),
   });
   const analyticsController = createAnalyticsController({ analyticsService });
+  const predictiveController = createPredictiveController({ predictiveService });
   const exportsController = createExportsController({
     definitions: createExportDefinitions({
       ordersService,
@@ -228,7 +236,10 @@ export function createApp({ db, config }) {
   api.use('/orders', createOrdersRouter({ ordersController, requireAuth: authenticate }));
   api.use('/inventory', createInventoryRouter({ inventoryController, requireAuth: authenticate }));
   api.use('/pipeline', createPipelineRouter({ pipelineController, requireAuth: authenticate }));
-  api.use('/analytics', createAnalyticsRouter({ analyticsController, requireAuth: authenticate }));
+  api.use(
+    '/analytics',
+    createAnalyticsRouter({ analyticsController, predictiveController, requireAuth: authenticate }),
+  );
   app.use('/api', api);
 
   app.use(notFoundHandler);

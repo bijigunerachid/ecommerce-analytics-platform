@@ -9,6 +9,10 @@ const TEST_BCRYPT_ROUNDS = 4; // minimum cost: keeps tests fast
 
 const TABLES = [
   'analytics_anomalies',
+  'analytics_cohort_retention',
+  'analytics_customer_segments',
+  'analytics_insights_runs',
+  'analytics_sales_forecast',
   'analytics_customers',
   'analytics_inventory_daily',
   'analytics_order_status',
