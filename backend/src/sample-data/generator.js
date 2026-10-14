@@ -232,6 +232,9 @@ export async function generateSampleData(
     // Historical timestamps: keep updated_at as generated instead of "now".
     await client.query('ALTER TABLE orders DISABLE TRIGGER orders_set_updated_at');
     await client.query('ALTER TABLE products DISABLE TRIGGER products_set_updated_at');
+    // A bulk load of history is not news: no stock notifications or live events for it.
+    await client.query('ALTER TABLE products DISABLE TRIGGER products_stock_level_notify');
+    await client.query('ALTER TABLE event_outbox DISABLE TRIGGER event_outbox_publish');
 
     const q = (sql, params) => client.query(sql, params);
     const at = (ms) => new Date(ms);
@@ -445,6 +448,8 @@ export async function generateSampleData(
 
     await client.query('ALTER TABLE orders ENABLE TRIGGER orders_set_updated_at');
     await client.query('ALTER TABLE products ENABLE TRIGGER products_set_updated_at');
+    await client.query('ALTER TABLE products ENABLE TRIGGER products_stock_level_notify');
+    await client.query('ALTER TABLE event_outbox ENABLE TRIGGER event_outbox_publish');
   });
 
   return {

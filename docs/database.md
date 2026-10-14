@@ -20,6 +20,8 @@ failing migration leaves the schema unchanged.
 | `order_items`     | Order lines with the unit price captured at order time.                  |
 | `order_status_history` | Every status an order entered, who changed it, and an optional note. |
 | `order_notes`     | Internal staff notes on an order.                                        |
+| `notifications`   | Low stock, out of stock, and anomaly notifications (written by triggers). |
+| `notification_reads` | Per user: when they last marked notifications as read.              |
 | `stock_movements` | Append-only inventory ledger: every stock change and its reason.         |
 | `event_outbox`    | Business events waiting to be relayed to Kafka.                          |
 
@@ -49,6 +51,12 @@ race condition slips past it.
 | Categories, products, customers in use cannot be deleted | `ON DELETE RESTRICT` foreign keys        |
 
 `updated_at` columns are maintained by the `set_updated_at()` trigger.
+
+Triggers (`1760500000000_notifications`): `products_stock_level_notify` and
+`analytics_anomalies_notify` create notifications; `notifications_publish` and
+`event_outbox_publish` send small `pg_notify('app_events', …)` messages for live updates, delivered
+on commit. The sample-data generator disables the stock and outbox triggers while it loads
+history, so a bulk load creates no notifications or live events.
 
 The status history is written in the same transaction as the status change. The migration that
 added it (`1760400000000_order-lifecycle`) rebuilt the history of existing orders from their

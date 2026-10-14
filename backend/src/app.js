@@ -7,6 +7,8 @@ import { createAuthController } from './controllers/auth.controller.js';
 import { createCategoriesController } from './controllers/categories.controller.js';
 import { createCustomersController } from './controllers/customers.controller.js';
 import { createInsightsController } from './controllers/insights.controller.js';
+import { createNotificationsController } from './controllers/notifications.controller.js';
+import { createStreamController } from './controllers/stream.controller.js';
 import { createHealthController } from './controllers/health.controller.js';
 import { createInventoryController } from './controllers/inventory.controller.js';
 import { createPipelineController } from './controllers/pipeline.controller.js';
@@ -19,6 +21,8 @@ import { createAnalyticsRepository } from './repositories/analytics.repository.j
 import { createCategoriesRepository } from './repositories/categories.repository.js';
 import { createCustomersRepository } from './repositories/customers.repository.js';
 import { createInsightsRepository } from './repositories/insights.repository.js';
+import { createNotificationsRepository } from './repositories/notifications.repository.js';
+import { createEventHub } from './realtime/event-hub.js';
 import { createOrdersRepository } from './repositories/orders.repository.js';
 import { createOutboxRepository } from './repositories/outbox.repository.js';
 import { createPipelineRepository } from './repositories/pipeline.repository.js';
@@ -29,6 +33,7 @@ import { createAnalyticsRouter } from './routes/analytics.routes.js';
 import { createAuthRouter } from './routes/auth.routes.js';
 import { createCrudRouter } from './routes/crud.routes.js';
 import { createInsightsRouter } from './routes/insights.routes.js';
+import { createRealtimeRouter } from './routes/realtime.routes.js';
 import { createInventoryRouter } from './routes/inventory.routes.js';
 import { createPipelineRouter } from './routes/pipeline.routes.js';
 import { createOrdersRouter } from './routes/orders.routes.js';
@@ -106,6 +111,16 @@ export function createApp({ db, config }) {
   const ordersController = createOrdersController({ ordersService });
   const inventoryController = createInventoryController({ inventoryService });
   const insightsController = createInsightsController({ insightsService });
+  const notificationsController = createNotificationsController({
+    notificationsRepository: createNotificationsRepository(db),
+  });
+  // Live events from PostgreSQL to SSE streams; stopped by the caller on shutdown.
+  const eventHub = createEventHub({ dbConfig: config.db });
+  const streamController = createStreamController({
+    eventHub,
+    authService,
+    heartbeatMs: config.streamHeartbeatMs,
+  });
   const analyticsController = createAnalyticsController({
     analyticsService: createAnalyticsService({
       analyticsRepository: createAnalyticsRepository(db),
@@ -117,6 +132,7 @@ export function createApp({ db, config }) {
   const authenticate = requireAuth(authService);
 
   const app = express();
+  app.locals.eventHub = eventHub;
   app.disable('x-powered-by');
   app.set('trust proxy', config.trustProxy ?? 0);
   app.use(helmet());
@@ -144,6 +160,9 @@ export function createApp({ db, config }) {
   api.use('/users', createUsersRouter({ usersController, requireAuth: authenticate }));
   // Before the resource routers, which would treat "insights" as an unknown sub-path.
   api.use(createInsightsRouter({ insightsController, requireAuth: authenticate }));
+  api.use(
+    createRealtimeRouter({ notificationsController, streamController, requireAuth: authenticate }),
+  );
   api.use(
     '/categories',
     createCrudRouter({

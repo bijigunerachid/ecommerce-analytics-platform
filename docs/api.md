@@ -385,6 +385,44 @@ before the product was created). Restock advice uses the sales of the last 30 da
 sales plus the reorder level, and `suggestedQuantity` is what is missing to reach it.
 `needsRestock` is true at or below the reorder level, or with less than 14 days of cover.
 
+## Notifications and live updates
+
+| Method & path | Access | Notes |
+| --- | --- | --- |
+| `GET /notifications?limit=20` | any | newest first (limit 1–100), with `unread` per item and `unreadCount` |
+| `POST /notifications/read` | any | marks everything as read for the signed-in user |
+| `GET /activity?limit=10` | any | latest order placements and status changes (limit 1–50) |
+| `GET /stream` | any | Server-Sent Events, see below |
+
+Notifications are created by the database: `low_stock` (warning) when a product's stock drops
+to its reorder level, `out_of_stock` (critical) when it reaches zero, and `anomaly` (critical or
+warning by the anomaly's severity) for each anomaly the stream processor detects. Each has a
+`title`, `body`, and `link` to the product, order, or customer. Read state is per user; a new
+account starts with nothing unread.
+
+```json
+{ "unreadCount": 1, "notifications": [
+  { "id": 12, "kind": "low_stock", "severity": "warning", "title": "Desk Lamp is low on stock",
+    "body": "9 units left (reorder level 10).", "link": "/products/4",
+    "createdAt": "...", "unread": true }
+] }
+```
+
+### `GET /stream`
+
+`text/event-stream`. Events (`data` is JSON):
+
+| Event | When | Data |
+| --- | --- | --- |
+| `ready` | on connect | `{ userId }` |
+| `order` | an order is placed or changes status | `{ type, eventId, occurredAt, orderId, customerId, customerName, totalAmount, fromStatus, toStatus }` |
+| `notification` | a notification is created | `{ type, id, kind, severity, title }` |
+| `resync` | the server reconnected to the database; events may have been missed | `{}` |
+| `session-ended` | the session expired or the account was deactivated; the stream closes | `{}` |
+
+A comment line (`: ping`) is sent every 25 seconds. Events are not replayed after a disconnect:
+clients refetch on reconnect.
+
 ## Inventory
 
 ### `GET /inventory/movements`

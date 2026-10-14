@@ -17,6 +17,7 @@ const TABLES = [
   'analytics_sales_hourly',
   'analytics_stream_batches',
   'pipeline_heartbeats',
+  'notifications',
   'event_outbox',
   'stock_movements',
   'order_items',
@@ -136,6 +137,9 @@ export function createTestContext(configOverrides) {
       return agent;
     },
 
-    close: () => db.end(),
+    async close() {
+      await app.locals.eventHub.stop();
+      await db.end();
+    },
   };
 }

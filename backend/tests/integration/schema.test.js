@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import pg from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { getDatabaseConfig } from '../../src/config/database.js';
@@ -22,6 +23,8 @@ const CORE_TABLES = [
   'categories',
   'customers',
   'event_outbox',
+  'notification_reads',
+  'notifications',
   'order_items',
   'order_notes',
   'order_status_history',
@@ -312,7 +315,10 @@ describe('event outbox', () => {
 describe('order lifecycle migration', () => {
   it('backfills status history from the outbox events of existing orders', async () => {
     // Go back to before the migration, create an order with its events, then migrate up.
-    await migrate(dbConfig, 'down', { count: 1 });
+    const laterOrSame = readdirSync(new URL('../../migrations/', import.meta.url)).filter(
+      (name) => name >= '1760400000000',
+    );
+    await migrate(dbConfig, 'down', { count: laterOrSame.length });
     const customerId = await insertCustomer();
     const orderId = Number(await insertOrder(customerId));
     await client.query(`UPDATE orders SET status = 'shipped' WHERE id = $1`, [orderId]);
@@ -363,5 +369,34 @@ describe('order lifecycle migration', () => {
       PG_CHECK_VIOLATION,
       'order_status_history_changes_status',
     );
+  });
+});
+
+describe('notifications migration', () => {
+  it('creates notifications for anomalies detected before it, at their detection time', async () => {
+    const later = readdirSync(new URL('../../migrations/', import.meta.url)).filter(
+      (name) => name >= '1760500000000',
+    );
+    await migrate(dbConfig, 'down', { count: later.length });
+    await client.query(
+      `INSERT INTO analytics_anomalies
+         (anomaly_type, severity, entity_type, entity_id, occurred_at, detected_at, description)
+       VALUES ('order_velocity', 'medium', 'customer', '7', '2026-02-01T10:00:00Z',
+               '2026-02-01T10:05:00Z', 'Customer placed 6 orders within 10 minutes')`,
+    );
+    await migrate(dbConfig, 'up');
+
+    const { rows } = await client.query(
+      'SELECT kind, severity, title, link, created_at FROM notifications',
+    );
+    expect(rows).toEqual([
+      {
+        kind: 'anomaly',
+        severity: 'warning',
+        title: 'Burst of orders',
+        link: '/customers/7',
+        created_at: new Date('2026-02-01T10:05:00Z'),
+      },
+    ]);
   });
 });

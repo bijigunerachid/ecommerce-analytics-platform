@@ -111,6 +111,18 @@ src/
   with the header checkbox) and apply a status to all of them. Orders that could not change are
   listed with the reason. The selection clears when the page or a filter changes.
 
+## Live updates
+
+- `RealtimeProvider` opens one `EventSource` to `/api/stream` while signed in. Components
+  subscribe with `useRealtimeEvent(name, handler)`; `useRealtimeStatus()` gives the connection
+  state. After a reconnect, subscribers get `resync` and refetch.
+- **Notification bell** (top bar): unread count, the latest 15 notifications with links, and
+  *Mark all as read*. Critical notifications that arrive live also show a toast.
+- **Live activity** (dashboard): the latest order events, with new ones added on top as they
+  happen, and the connection state (Live, Reconnecting).
+- Tests replace `EventSource` with `src/test/fake-event-source.js` and push events with
+  `FakeEventSource.latest().emit(name, data)`.
+
 ## Customer and product pages
 
 - **Customer** (`/customers/:id`, linked from the customer list and search): contact details,

@@ -25,6 +25,7 @@ import { Menu } from '../components/ui/Menu.jsx';
 import { CommandPalette } from '../features/command/CommandPalette.jsx';
 import { ShortcutsDialog } from '../features/command/ShortcutsDialog.jsx';
 import { useGlobalShortcuts } from '../features/command/useGlobalShortcuts.js';
+import { NotificationBell } from '../features/notifications/NotificationBell.jsx';
 import { PipelineStatus } from '../features/shell/PipelineStatus.jsx';
 import { useTheme } from '../theme/ThemeContext.js';
 import { breadcrumbsFor, visibleNavGroups } from './navigation.js';
@@ -291,6 +292,7 @@ function TopBar({ onOpenMenu, onOpenPalette, onOpenHelp }) {
         </span>
       </button>
       <div className="flex items-center gap-0.5">
+        <NotificationBell />
         <ThemeToggle />
         <Button
           variant="ghost"

@@ -24,6 +24,8 @@ function shutdown(signal) {
     await db.end();
     process.exit(0);
   });
+  // Open event streams would keep server.close waiting: end them first.
+  app.locals.eventHub.stop();
   setTimeout(() => process.exit(1), 10000).unref();
 }
 process.on('SIGINT', () => shutdown('SIGINT'));

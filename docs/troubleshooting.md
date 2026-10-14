@@ -85,6 +85,11 @@ Recompute them from the Parquet history:
 The generator only fills an empty database, so it never mixes synthetic data with yours. Reset
 with `docker compose down -v` (deletes everything) or use a fresh database.
 
+**Live activity says "Reconnecting…" or notifications don't arrive**
+The browser retries on its own every few seconds. Check `docker compose logs api` for
+`Event hub` errors (the API could not `LISTEN` on PostgreSQL). Behind another reverse proxy,
+make sure `/api/stream` is not buffered and its read timeout is longer than 25 seconds.
+
 ## Development
 
 **Backend tests fail with `ECONNREFUSED 127.0.0.1:5432` or Kafka timeouts**

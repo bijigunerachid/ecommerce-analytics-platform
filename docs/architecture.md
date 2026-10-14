@@ -87,6 +87,35 @@ sequenceDiagram
     S->>P: one transaction: claim batch + event ids, upsert aggregates, anomalies
 ```
 
+## Live updates and notifications
+
+The browser keeps one Server-Sent Events connection (`GET /api/stream`) open per signed-in tab.
+Updates come from PostgreSQL itself, so they follow committed data whoever wrote it:
+
+```mermaid
+sequenceDiagram
+    participant W as Writer (API, Spark)
+    participant P as PostgreSQL
+    participant A as API event hub
+    participant B as Browser
+    W->>P: transaction (order, stock change, anomaly)
+    P->>P: triggers write notifications (low stock, out of stock, anomaly)
+    P-->>A: NOTIFY app_events on commit
+    A-->>B: SSE event (order or notification)
+    B->>A: refetch notifications or show the order in Live activity
+```
+
+- **Triggers** create notifications in the same transaction as the change: stock crossing its
+  reorder level, stock reaching zero, and every anomaly Spark records (deduplicated, so the
+  analytics rebuild does not notify twice).
+- **Event hub** (`src/realtime/event-hub.js`): one dedicated connection runs `LISTEN app_events`
+  and fans out to the open streams. It reconnects with backoff; streams then get a `resync`
+  event, and the browser refetches what it shows.
+- **Streams** send a heartbeat every 25 s that also re-checks the session, so an expired token or
+  a deactivated account ends the stream. nginx serves `/api/stream` without buffering.
+- Live updates are a convenience: everything they show is also available from the regular
+  endpoints, and a missed event never leaves the data wrong.
+
 ## Guarantees
 
 | Concern | How it is handled |
