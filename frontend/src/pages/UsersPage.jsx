@@ -1,28 +1,25 @@
-import { Plus, UserCog } from 'lucide-react';
+import { KeyRound, Pencil, Plus, UserCog } from 'lucide-react';
 import { useState } from 'react';
 import { usersApi } from '../api/endpoints.js';
+import { useAuth } from '../auth/AuthContext.js';
 import { DataTable } from '../components/charts/ChartFrame.jsx';
 import { PageHeader } from '../components/data/ResourceTable.jsx';
 import { ActiveBadge, Badge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Card } from '../components/ui/Card.jsx';
-import { FormError, SelectField, TextField } from '../components/ui/Field.jsx';
+import { CheckboxField, FormError, SelectField, TextField } from '../components/ui/Field.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
 import { QueryState } from '../components/ui/States.jsx';
 import { useToast } from '../components/ui/toast-context.js';
 import { useApiQuery } from '../hooks/useApiQuery.js';
 import { rules, useForm } from '../hooks/useForm.js';
 import { formatDateTime } from '../utils/format.js';
+import { newPasswordError } from '../utils/password.js';
 
 const validate = (v) => ({
   fullName: rules.required(v.fullName, 'Full name'),
   email: rules.email(v.email),
-  password:
-    v.password.length < 12
-      ? 'Use at least 12 characters.'
-      : new TextEncoder().encode(v.password).length > 72
-        ? 'Use at most 72 bytes.'
-        : undefined,
+  password: newPasswordError(v.password),
 });
 
 function UserForm({ onClose, onSaved }) {
@@ -47,7 +44,7 @@ function UserForm({ onClose, onSaved }) {
     <Modal
       open
       title="New staff account"
-      description="Share the password with the person securely; they can't change it yet."
+      description="Share the password with the person securely. They can change it on their account page."
       onClose={onClose}
       busy={f.submitting}
       footer={
@@ -94,10 +91,134 @@ function UserForm({ onClose, onSaved }) {
           label="Role"
           value={f.values.role}
           onChange={f.setField('role')}
-          options={[
-            { value: 'analyst', label: 'Analyst: read-only access' },
-            { value: 'admin', label: 'Admin: full access, including users' },
-          ]}
+          options={ROLE_OPTIONS}
+        />
+      </form>
+    </Modal>
+  );
+}
+
+const ROLE_OPTIONS = [
+  { value: 'analyst', label: 'Analyst: read-only access' },
+  { value: 'admin', label: 'Admin: full access, including users' },
+];
+
+function EditUserModal({ user, isSelf, onClose, onSaved }) {
+  const toast = useToast();
+  const form = useForm(
+    { fullName: user.fullName, role: user.role, isActive: user.isActive },
+    (v) => ({ fullName: rules.required(v.fullName, 'Full name') }),
+  );
+
+  async function save(e) {
+    e.preventDefault();
+    const ok = await form.submit(async (v) => {
+      const changes = {};
+      if (v.fullName.trim() !== user.fullName) changes.fullName = v.fullName.trim();
+      if (!isSelf && v.role !== user.role) changes.role = v.role;
+      if (!isSelf && v.isActive !== user.isActive) changes.isActive = v.isActive;
+      if (Object.keys(changes).length === 0) return;
+      const { user: updated } = await usersApi.update(user.id, changes);
+      toast.success(`Saved ${updated.email}.`);
+    });
+    if (ok) onSaved();
+  }
+
+  const f = form;
+  return (
+    <Modal
+      open
+      title={`Edit ${user.email}`}
+      onClose={onClose}
+      busy={f.submitting}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={f.submitting}>
+            Cancel
+          </Button>
+          <Button type="submit" form="edit-user-form" disabled={f.submitting}>
+            {f.submitting ? 'Saving…' : 'Save changes'}
+          </Button>
+        </>
+      }
+    >
+      <form id="edit-user-form" onSubmit={save} noValidate className="space-y-4">
+        <FormError>{f.formError}</FormError>
+        <TextField
+          label="Full name"
+          required
+          maxLength={100}
+          value={f.values.fullName}
+          onChange={f.setField('fullName')}
+          error={f.errors.fullName}
+        />
+        <SelectField
+          label="Role"
+          value={f.values.role}
+          onChange={f.setField('role')}
+          options={ROLE_OPTIONS}
+          disabled={isSelf}
+          hint={isSelf ? 'You cannot change your own role.' : undefined}
+        />
+        <CheckboxField
+          label="Active"
+          hint={
+            isSelf
+              ? 'You cannot deactivate yourself.'
+              : 'Inactive accounts cannot sign in. Deactivating signs them out everywhere.'
+          }
+          checked={f.values.isActive}
+          onChange={f.setField('isActive')}
+          disabled={isSelf}
+        />
+      </form>
+    </Modal>
+  );
+}
+
+function ResetPasswordModal({ user, onClose }) {
+  const toast = useToast();
+  const form = useForm({ password: '' }, (v) => ({ password: newPasswordError(v.password) }));
+
+  async function save(e) {
+    e.preventDefault();
+    const ok = await form.submit(async (v) => {
+      await usersApi.resetPassword(user.id, v.password);
+      toast.success(`Password reset for ${user.email}. They were signed out everywhere.`);
+    });
+    if (ok) onClose();
+  }
+
+  const f = form;
+  return (
+    <Modal
+      open
+      title={`Reset password for ${user.email}`}
+      description="They are signed out everywhere and sign in with the new password. Share it securely."
+      onClose={onClose}
+      busy={f.submitting}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={f.submitting}>
+            Cancel
+          </Button>
+          <Button type="submit" form="reset-password-form" disabled={f.submitting}>
+            {f.submitting ? 'Resetting…' : 'Reset password'}
+          </Button>
+        </>
+      }
+    >
+      <form id="reset-password-form" onSubmit={save} noValidate className="space-y-4">
+        <FormError>{f.formError}</FormError>
+        <TextField
+          label="New password"
+          type="password"
+          required
+          autoComplete="new-password"
+          value={f.values.password}
+          onChange={f.setField('password')}
+          error={f.errors.password}
+          hint="At least 12 characters"
         />
       </form>
     </Modal>
@@ -105,7 +226,10 @@ function UserForm({ onClose, onSaved }) {
 }
 
 export function UsersPage() {
+  const { user: me } = useAuth();
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [resetting, setResetting] = useState(null);
   const query = useApiQuery((signal) => usersApi.list({ signal }), []);
 
   return (
@@ -144,12 +268,53 @@ export function UsersPage() {
                   label: 'Last sign-in',
                   render: (u) => (u.lastLoginAt ? formatDateTime(u.lastLoginAt) : 'Never'),
                 },
+                {
+                  key: 'actions',
+                  label: <span className="sr-only">Actions</span>,
+                  align: 'right',
+                  render: (u) => (
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Edit ${u.email}`}
+                        title="Edit"
+                        onClick={() => setEditing(u)}
+                      >
+                        <Pencil aria-hidden="true" className="size-4" />
+                      </Button>
+                      {u.id !== me.id && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Reset password for ${u.email}`}
+                          title="Reset password"
+                          onClick={() => setResetting(u)}
+                        >
+                          <KeyRound aria-hidden="true" className="size-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ),
+                },
               ]}
               rows={data.users.map((u) => ({ ...u, key: u.id }))}
             />
           )}
         </QueryState>
       </Card>
+      {editing && (
+        <EditUserModal
+          user={editing}
+          isSelf={editing.id === me.id}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            query.refetch();
+          }}
+        />
+      )}
+      {resetting && <ResetPasswordModal user={resetting} onClose={() => setResetting(null)} />}
       {creating && (
         <UserForm
           onClose={() => setCreating(false)}

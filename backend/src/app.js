@@ -6,6 +6,7 @@ import { createAnalyticsController } from './controllers/analytics.controller.js
 import { createAuthController } from './controllers/auth.controller.js';
 import { createCategoriesController } from './controllers/categories.controller.js';
 import { createCustomersController } from './controllers/customers.controller.js';
+import { createAuditController } from './controllers/audit.controller.js';
 import { createInsightsController } from './controllers/insights.controller.js';
 import { createNotificationsController } from './controllers/notifications.controller.js';
 import { createStreamController } from './controllers/stream.controller.js';
@@ -20,6 +21,8 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { createAnalyticsRepository } from './repositories/analytics.repository.js';
 import { createCategoriesRepository } from './repositories/categories.repository.js';
 import { createCustomersRepository } from './repositories/customers.repository.js';
+import { auditContext } from './middleware/audit.js';
+import { createAuditRepository } from './repositories/audit.repository.js';
 import { createInsightsRepository } from './repositories/insights.repository.js';
 import { createNotificationsRepository } from './repositories/notifications.repository.js';
 import { createEventHub } from './realtime/event-hub.js';
@@ -32,6 +35,7 @@ import { createUsersRepository } from './repositories/users.repository.js';
 import { createAnalyticsRouter } from './routes/analytics.routes.js';
 import { createAuthRouter } from './routes/auth.routes.js';
 import { createCrudRouter } from './routes/crud.routes.js';
+import { createAuditRouter } from './routes/audit.routes.js';
 import { createInsightsRouter } from './routes/insights.routes.js';
 import { createRealtimeRouter } from './routes/realtime.routes.js';
 import { createInventoryRouter } from './routes/inventory.routes.js';
@@ -74,7 +78,12 @@ export function createApp({ db, config }) {
 
   const usersRepository = createUsersRepository(db);
   const authService = createAuthService({ usersRepository, ...auth });
-  const usersService = createUsersService({ usersRepository, bcryptRounds: auth.bcryptRounds });
+  const usersService = createUsersService({
+    db,
+    usersRepository,
+    bcryptRounds: auth.bcryptRounds,
+  });
+  const auditRepository = createAuditRepository(db);
   const categoriesService = createCategoriesService({
     categoriesRepository: createCategoriesRepository(db),
   });
@@ -111,6 +120,7 @@ export function createApp({ db, config }) {
   const ordersController = createOrdersController({ ordersService });
   const inventoryController = createInventoryController({ inventoryService });
   const insightsController = createInsightsController({ insightsService });
+  const auditController = createAuditController({ auditRepository });
   const notificationsController = createNotificationsController({
     notificationsRepository: createNotificationsRepository(db),
   });
@@ -147,6 +157,7 @@ export function createApp({ db, config }) {
   app.use(cookieParser());
 
   const api = express.Router();
+  api.use(auditContext(auditRepository));
   api.get('/health', healthController.ready);
   api.get('/health/live', healthController.live);
   api.use(
@@ -158,6 +169,7 @@ export function createApp({ db, config }) {
     }),
   );
   api.use('/users', createUsersRouter({ usersController, requireAuth: authenticate }));
+  api.use('/audit-log', createAuditRouter({ auditController, requireAuth: authenticate }));
   // Before the resource routers, which would treat "insights" as an unknown sub-path.
   api.use(createInsightsRouter({ insightsController, requireAuth: authenticate }));
   api.use(

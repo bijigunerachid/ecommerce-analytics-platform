@@ -18,6 +18,7 @@ const TABLES = [
   'analytics_stream_batches',
   'pipeline_heartbeats',
   'notifications',
+  'audit_log',
   'event_outbox',
   'stock_movements',
   'order_items',

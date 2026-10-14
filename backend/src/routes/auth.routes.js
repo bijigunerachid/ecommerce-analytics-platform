@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { validate } from '../middleware/validate.js';
-import { loginSchema } from '../validation/auth.schemas.js';
+import {
+  changePasswordSchema,
+  loginSchema,
+  updateProfileSchema,
+} from '../validation/auth.schemas.js';
 
 export function createAuthRouter({ authController, requireAuth, loginRateLimit }) {
   const router = Router();
@@ -21,6 +25,21 @@ export function createAuthRouter({ authController, requireAuth, loginRateLimit }
   router.post('/login', loginLimiter, validate({ body: loginSchema }), authController.login);
   router.post('/logout', authController.logout);
   router.get('/me', requireAuth, authController.me);
+  router.patch(
+    '/me',
+    requireAuth,
+    validate({ body: updateProfileSchema }),
+    authController.updateProfile,
+  );
+  // Rate limited like sign-in: it checks the current password.
+  router.post(
+    '/password',
+    requireAuth,
+    loginLimiter,
+    validate({ body: changePasswordSchema }),
+    authController.changePassword,
+  );
+  router.post('/sessions/revoke-others', requireAuth, authController.revokeOtherSessions);
 
   return router;
 }

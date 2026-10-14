@@ -44,9 +44,11 @@ describe('app shell', () => {
     const { user } = renderApp('/');
     const trigger = await screen.findByRole('button', { name: /Account menu/ });
     await user.click(trigger);
-    expect(screen.getByRole('menuitemradio', { name: 'Light' })).toHaveFocus();
+    expect(screen.getByRole('menuitem', { name: 'Account settings' })).toHaveFocus();
     await user.keyboard('{ArrowDown}');
-    expect(screen.getByRole('menuitemradio', { name: 'Dark' })).toHaveFocus();
+    expect(screen.getByRole('menuitemradio', { name: 'Light' })).toHaveFocus();
+    await user.keyboard('{ArrowUp}{ArrowUp}'); // wraps around to the last item
+    expect(screen.getByRole('menuitem', { name: 'Sign out' })).toHaveFocus();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();

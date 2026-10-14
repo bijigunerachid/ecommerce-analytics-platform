@@ -12,6 +12,7 @@ import readline from 'node:readline';
 import { parseArgs } from 'node:util';
 import { getDatabaseConfig } from '../src/config/database.js';
 import { createPool } from '../src/db/pool.js';
+import { createAuditRepository } from '../src/repositories/audit.repository.js';
 import { createUsersRepository } from '../src/repositories/users.repository.js';
 import { createUsersService } from '../src/services/users.service.js';
 import { createUserSchema } from '../src/validation/users.schemas.js';
@@ -93,6 +94,14 @@ async function main() {
       bcryptRounds: Number(process.env.BCRYPT_ROUNDS) || 12,
     });
     const user = await usersService.createUser(parsed.data);
+    // No signed-in actor: the audit entry records that the command line created it.
+    await createAuditRepository(pool).insert({
+      action: 'user.created',
+      entityType: 'user',
+      entityId: user.id,
+      summary: `Created ${user.role} account ${user.email} with the create-admin script`,
+      details: { email: user.email, fullName: user.fullName, role: user.role },
+    });
     console.log(`Created ${user.role} account ${user.email} (id ${user.id}).`);
   } finally {
     await pool.end();

@@ -111,6 +111,16 @@ src/
   with the header checkbox) and apply a status to all of them. Orders that could not change are
   listed with the reason. The selection clears when the page or a filter changes.
 
+## Account and administration
+
+- **Account** (`/account`, from the account menu): change your name, change your password (with
+  the current one; other devices are signed out), and sign out other sessions.
+- **Users** (admins): edit name, role, and active state, and reset another user's password. Your
+  own role and active state are locked in the form, matching the API rule.
+- **Audit log** (admins, `/audit-log`): filter by action, staff member, text, and dates; links to
+  the order, product, or customer; select a row to see the recorded changes (before → after) and
+  the IP address.
+
 ## Live updates
 
 - `RealtimeProvider` opens one `EventSource` to `/api/stream` while signed in. Components

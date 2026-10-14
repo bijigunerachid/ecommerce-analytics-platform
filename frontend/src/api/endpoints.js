@@ -5,6 +5,9 @@ export const authApi = {
   login: (email, password) =>
     api.post('/auth/login', { email, password }, { skipUnauthorizedEvent: true }),
   logout: () => api.post('/auth/logout', undefined, { skipUnauthorizedEvent: true }),
+  updateProfile: (body) => api.patch('/auth/me', body),
+  changePassword: (body) => api.post('/auth/password', body),
+  revokeOtherSessions: () => api.post('/auth/sessions/revoke-others'),
 };
 
 export const analyticsApi = {
@@ -64,6 +67,12 @@ export const inventoryApi = {
 export const usersApi = {
   list: (options) => api.get('/users', options),
   create: (body) => api.post('/users', body),
+  update: (id, body) => api.patch(`/users/${id}`, body),
+  resetPassword: (id, password) => api.post(`/users/${id}/password`, { password }),
+};
+
+export const auditApi = {
+  list: (params, options) => api.get('/audit-log', { params, ...options }),
 };
 
 export const notificationsApi = {

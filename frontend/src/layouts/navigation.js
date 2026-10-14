@@ -1,4 +1,13 @@
-import { Boxes, LayoutDashboard, Package, ReceiptText, Tags, UserCog, Users } from 'lucide-react';
+import {
+  Boxes,
+  LayoutDashboard,
+  Package,
+  ReceiptText,
+  ScrollText,
+  Tags,
+  UserCog,
+  Users,
+} from 'lucide-react';
 
 /**
  * The app's sections, in sidebar order. The sidebar, breadcrumbs, command palette, and
@@ -27,7 +36,10 @@ export const NAV_GROUPS = [
   {
     label: 'Administration',
     adminOnly: true,
-    items: [{ to: '/users', label: 'Users', icon: UserCog, key: 'u', adminOnly: true }],
+    items: [
+      { to: '/users', label: 'Users', icon: UserCog, key: 'u', adminOnly: true },
+      { to: '/audit-log', label: 'Audit log', icon: ScrollText, key: 'l', adminOnly: true },
+    ],
   },
 ];
 
@@ -46,6 +58,7 @@ export const NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items.map((i) => ({ ...i, g
  */
 export function breadcrumbsFor(pathname) {
   if (pathname === '/') return [{ label: 'Dashboard' }];
+  if (pathname === '/account') return [{ label: 'Account' }];
   const [first, second] = pathname.split('/').filter(Boolean);
   const section = NAV_ITEMS.find((i) => i.to === `/${first}`);
   if (!section) return [{ label: 'Not found' }];

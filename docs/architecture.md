@@ -128,7 +128,9 @@ sequenceDiagram
 | Duplicate delivery | At-least-once publishing; Spark deduplicates by `event_id` against `analytics_processed_events` |
 | Spark crash or replay | Offsets in the checkpoint; batch ids recorded in PostgreSQL; Parquet written per batch with overwrite |
 | Lost or wrong aggregates | `spark-rebuild` recomputes everything from the Parquet history |
-| Session security | JWT in an HttpOnly, SameSite=Strict cookie; user and role reloaded from the database on every request |
+| Session security | JWT in an HttpOnly, SameSite=Strict cookie; user, role, and session version reloaded from the database on every request, so deactivation, password changes, and "sign out other sessions" take effect immediately |
+| Lockout | Admins cannot demote or deactivate themselves, and the last active admin cannot be removed (row locks make concurrent changes safe) |
+| Accountability | Every sign-in (including failed ones) and every change is written to an append-only `audit_log` with the actor and client IP |
 | Spoofed client IPs | The API trusts `X-Forwarded-For` only from the configured number of proxies (`TRUST_PROXY`) |
 
 More detail: [database.md](database.md) (schema and locking), [events.md](events.md) (event

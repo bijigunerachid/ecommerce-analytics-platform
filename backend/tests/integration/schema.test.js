@@ -20,6 +20,7 @@ const CORE_TABLES = [
   'analytics_product_daily',
   'analytics_sales_hourly',
   'analytics_stream_batches',
+  'audit_log',
   'categories',
   'customers',
   'event_outbox',

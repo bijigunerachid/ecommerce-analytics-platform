@@ -20,6 +20,7 @@ failing migration leaves the schema unchanged.
 | `order_items`     | Order lines with the unit price captured at order time.                  |
 | `order_status_history` | Every status an order entered, who changed it, and an optional note. |
 | `order_notes`     | Internal staff notes on an order.                                        |
+| `audit_log`       | Append-only record of sign-ins and changes (who, what, when, IP).       |
 | `notifications`   | Low stock, out of stock, and anomaly notifications (written by triggers). |
 | `notification_reads` | Per user: when they last marked notifications as read.              |
 | `stock_movements` | Append-only inventory ledger: every stock change and its reason.         |
@@ -48,6 +49,7 @@ race condition slips past it.
 | Order status is one of pending/paid/shipped/delivered/cancelled | `orders_status_valid`            |
 | User role is admin or analyst                        | `users_role_valid`                          |
 | A history row always changes the status              | `order_status_history_changes_status`       |
+| Audit entries cannot be edited or deleted            | `audit_log_append_only` trigger              |
 | Categories, products, customers in use cannot be deleted | `ON DELETE RESTRICT` foreign keys        |
 
 `updated_at` columns are maintained by the `set_updated_at()` trigger.
@@ -57,6 +59,10 @@ Triggers (`1760500000000_notifications`): `products_stock_level_notify` and
 `event_outbox_publish` send small `pg_notify('app_events', …)` messages for live updates, delivered
 on commit. The sample-data generator disables the stock and outbox triggers while it loads
 history, so a bulk load creates no notifications or live events.
+
+`users.session_version` is part of every session token; raising it voids the user's existing
+sessions. `audit_log` rejects `UPDATE` and `DELETE` with a trigger, except the
+`ON DELETE SET NULL` that clears `actor_id` when an account is removed (`actor_email` stays).
 
 The status history is written in the same transaction as the status change. The migration that
 added it (`1760400000000_order-lifecycle`) rebuilt the history of existing orders from their
