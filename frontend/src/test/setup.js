@@ -26,9 +26,10 @@ export function mockPrefersDark(dark) {
 
 beforeAll(async () => {
   server.listen({ onUnhandledRequest: 'error' });
-  // The dashboard is lazy-loaded; its first import compiles the chart library. Do that
+  // Pages are lazy-loaded; the first import compiles them (and the chart library). Do that
   // up front so tests measure app behavior, not module compilation.
-  await import('../pages/DashboardPage.jsx');
+  const { pageLoaders } = await import('../routes.jsx');
+  await Promise.all(Object.values(pageLoaders).map((load) => load()));
 }, 60_000);
 afterEach(() => {
   cleanup();

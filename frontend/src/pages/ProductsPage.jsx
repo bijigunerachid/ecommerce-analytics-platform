@@ -1,4 +1,4 @@
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Package, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { categoriesApi, productsApi } from '../api/endpoints.js';
 import { usePermissions } from '../auth/usePermissions.js';
@@ -293,6 +293,7 @@ export function ProductsPage() {
     <div className="space-y-4">
       <PageHeader
         title="Products"
+        icon={Package}
         description="Catalog, prices, and current stock."
         actions={
           canEdit && (

@@ -72,7 +72,8 @@ describe('authentication flow', () => {
   it('signs out', async () => {
     const { user, router } = renderApp('/');
     await screen.findByRole('heading', { name: 'Dashboard' });
-    await user.click(screen.getAllByRole('button', { name: 'Sign out' })[0]);
+    await user.click(screen.getByRole('button', { name: /Account menu/ }));
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/login'));
   });
 

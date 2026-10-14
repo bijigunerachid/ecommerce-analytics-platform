@@ -1,4 +1,4 @@
-import { Pencil, Plus, ReceiptText, Trash2 } from 'lucide-react';
+import { Pencil, Plus, ReceiptText, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { customersApi } from '../api/endpoints.js';
@@ -236,6 +236,7 @@ export function CustomersPage() {
     <div className="space-y-4">
       <PageHeader
         title="Customers"
+        icon={Users}
         description="Order counts and spending exclude cancelled orders."
         actions={
           canEdit && (

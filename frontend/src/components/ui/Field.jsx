@@ -1,7 +1,7 @@
 import { useId } from 'react';
 
 const CONTROL =
-  'block w-full rounded-lg border bg-surface-raised px-3 text-sm text-ink placeholder:text-ink-muted disabled:opacity-60';
+  'block w-full rounded-lg border bg-surface-raised px-3 text-sm text-ink shadow-card transition-[border-color,box-shadow] placeholder:text-ink-muted focus:border-accent focus:ring-3 focus:ring-accent/20 focus:outline-none disabled:opacity-60';
 
 function controlClass(error, extra = '') {
   return `${CONTROL} ${error ? 'border-status-critical' : 'border-line-strong'} ${extra}`;
@@ -126,7 +126,7 @@ export function FilterSelect({ label, options, ...props }) {
       <select
         id={id}
         {...props}
-        className="h-9 rounded-lg border border-line-strong bg-surface-raised px-2 pr-7 text-sm text-ink"
+        className="h-9 rounded-lg border border-line-strong bg-surface-raised px-2.5 pr-7 text-sm text-ink shadow-card focus:border-accent focus:ring-3 focus:ring-accent/20 focus:outline-none"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

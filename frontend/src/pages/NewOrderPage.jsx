@@ -1,4 +1,4 @@
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { customersApi, ordersApi, productsApi } from '../api/endpoints.js';
@@ -136,7 +136,11 @@ export function NewOrderPage() {
       >
         <ArrowLeft aria-hidden="true" className="size-4" /> All orders
       </Link>
-      <PageHeader title="New order" description="Stock is reserved when the order is placed." />
+      <PageHeader
+        title="New order"
+        icon={ShoppingCart}
+        description="Stock is reserved when the order is placed."
+      />
       <FormError>{formError}</FormError>
 
       <div className="grid gap-4 lg:grid-cols-3">

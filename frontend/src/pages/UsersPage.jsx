@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus, UserCog } from 'lucide-react';
 import { useState } from 'react';
 import { usersApi } from '../api/endpoints.js';
 import { DataTable } from '../components/charts/ChartFrame.jsx';
@@ -112,6 +112,7 @@ export function UsersPage() {
     <div className="space-y-4">
       <PageHeader
         title="Users"
+        icon={UserCog}
         description="Staff accounts. Admins manage everything; analysts can view."
         actions={
           <Button onClick={() => setCreating(true)}>

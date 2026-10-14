@@ -1,4 +1,4 @@
-import { Plus, X } from 'lucide-react';
+import { Plus, ReceiptText, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { ordersApi } from '../api/endpoints.js';
 import { usePermissions } from '../auth/usePermissions.js';
@@ -9,6 +9,7 @@ import {
   SearchInput,
 } from '../components/data/ResourceTable.jsx';
 import { OrderStatusBadge } from '../components/ui/Badge.jsx';
+import { buttonClass } from '../components/ui/button-styles.js';
 import { Card } from '../components/ui/Card.jsx';
 import { FilterSelect } from '../components/ui/Field.jsx';
 import { useApiQuery } from '../hooks/useApiQuery.js';
@@ -89,13 +90,11 @@ export function OrdersPage() {
     <div className="space-y-4">
       <PageHeader
         title="Orders"
+        icon={ReceiptText}
         description="Totals are calculated by the server from current prices."
         actions={
           canEdit && (
-            <Link
-              to="/orders/new"
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-on-accent hover:bg-accent-strong"
-            >
+            <Link to="/orders/new" className={buttonClass()}>
               <Plus aria-hidden="true" className="size-4" /> New order
             </Link>
           )
