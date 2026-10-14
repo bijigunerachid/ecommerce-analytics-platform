@@ -403,6 +403,11 @@ export async function generateSampleData(
           })),
         };
         orders.set(item.ref, order);
+        await q(
+          `INSERT INTO order_status_history (order_id, from_status, to_status, changed_at)
+           VALUES ($1, NULL, 'pending', $2)`,
+          [orderId, at(ms)],
+        );
         await outbox(orderCreated(order), ms);
         stats.orders += 1;
         stats.grossCents += totalCents;
@@ -424,6 +429,11 @@ export async function generateSampleData(
             });
           }
         }
+        await q(
+          `INSERT INTO order_status_history (order_id, from_status, to_status, changed_at)
+           VALUES ($1, $2, $3, $4)`,
+          [order.id, fromStatus, item.status, at(ms)],
+        );
         await outbox(orderStatusChanged({ order, fromStatus, changedAt: at(ms) }), ms);
       }
 

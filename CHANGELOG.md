@@ -21,6 +21,13 @@ All notable changes to this project are documented here. The format follows
 - Keyboard shortcuts (`g` then a page key, `?` for the list).
 - Live pipeline status in the sidebar.
 - Dashboard live mode (auto-refresh every 15 seconds) and trend lines in the KPI tiles.
+- Order status history: every change records who made it and an optional note; existing orders
+  get their history rebuilt from the outbox events. Order page with a progress tracker and an
+  activity feed.
+- Internal order notes (`GET`/`POST /api/orders/:id/notes`).
+- Bulk status changes (`POST /api/orders/bulk-status`) with row selection on the Orders list;
+  each order changes on its own and failures are reported per order.
+- Printable invoices (`/orders/:id/invoice`).
 
 ## [1.0.0] - 2026-10-14
 

@@ -18,6 +18,8 @@ failing migration leaves the schema unchanged.
 | `customers`       | Customer records (synthetic data only).                                  |
 | `orders`          | Order header: customer, status, backend-computed `total_amount`.         |
 | `order_items`     | Order lines with the unit price captured at order time.                  |
+| `order_status_history` | Every status an order entered, who changed it, and an optional note. |
+| `order_notes`     | Internal staff notes on an order.                                        |
 | `stock_movements` | Append-only inventory ledger: every stock change and its reason.         |
 | `event_outbox`    | Business events waiting to be relayed to Kafka.                          |
 
@@ -43,9 +45,14 @@ race condition slips past it.
 | A retried stock change cannot be applied twice       | `stock_movements_idempotency_key_unique`    |
 | Order status is one of pending/paid/shipped/delivered/cancelled | `orders_status_valid`            |
 | User role is admin or analyst                        | `users_role_valid`                          |
+| A history row always changes the status              | `order_status_history_changes_status`       |
 | Categories, products, customers in use cannot be deleted | `ON DELETE RESTRICT` foreign keys        |
 
 `updated_at` columns are maintained by the `set_updated_at()` trigger.
+
+The status history is written in the same transaction as the status change. The migration that
+added it (`1760400000000_order-lifecycle`) rebuilt the history of existing orders from their
+`order.created` and `order.status_changed` events in `event_outbox`.
 
 ## Money
 

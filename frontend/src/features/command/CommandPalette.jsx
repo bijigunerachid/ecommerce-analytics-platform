@@ -244,9 +244,7 @@ function PaletteDialog({ onClose }) {
           )}
           {groups.map((group) => (
             <div key={group.label} role="group" aria-label={group.label} className="mb-1">
-              <p className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-ink-muted uppercase">
-                {group.label}
-              </p>
+              <p className="px-3 pt-2 pb-1 text-xs font-medium text-ink-muted">{group.label}</p>
               {group.items.map((item) => {
                 index += 1;
                 const selected = index === activeIndex;

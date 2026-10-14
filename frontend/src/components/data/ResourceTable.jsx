@@ -46,7 +46,7 @@ function SortHeader({ column, sort, order, onSort }) {
     <button
       type="button"
       onClick={() => onSort(column.sortKey, column.defaultOrder)}
-      className={`inline-flex items-center gap-1 font-semibold tracking-wide uppercase hover:text-ink ${active ? 'text-ink' : ''}`}
+      className={`inline-flex items-center gap-1 font-medium hover:text-ink ${active ? 'text-ink' : ''}`}
     >
       {column.label}
       <Icon aria-hidden="true" className={`size-3.5 ${active ? '' : 'opacity-40'}`} />
@@ -54,9 +54,34 @@ function SortHeader({ column, sort, order, onSort }) {
   );
 }
 
+/** Header checkbox: selects or clears every row on the current page (mixed when some are). */
+function SelectAllCheckbox({ rows, rowKey, selection }) {
+  const keys = rows.map(rowKey);
+  const count = keys.filter((k) => selection.selected.includes(k)).length;
+  return (
+    <input
+      type="checkbox"
+      aria-label={selection.allLabel}
+      checked={count > 0 && count === keys.length}
+      ref={(el) => {
+        if (el) el.indeterminate = count > 0 && count < keys.length;
+      }}
+      onChange={(e) =>
+        selection.onChange(
+          e.target.checked
+            ? [...new Set([...selection.selected, ...keys])]
+            : selection.selected.filter((k) => !keys.includes(k)),
+        )
+      }
+      className="size-4 rounded border-line-strong accent-[var(--accent)]"
+    />
+  );
+}
+
 /**
  * Server-driven table: sortable headers (aria-sort), pagination, and query states. On small
  * screens the table scrolls horizontally inside its card instead of breaking the page layout.
+ * Optional `selection` ({ selected, onChange, rowLabel, allLabel }) adds row checkboxes.
  */
 export function ResourceTable({
   query,
@@ -69,6 +94,7 @@ export function ResourceTable({
   caption,
   empty,
   onRowClick,
+  selection,
 }) {
   if (query.isLoading) {
     return <TableSkeleton columns={Math.min(columns.length, 6)} label={`Loading ${caption}`} />;
@@ -80,8 +106,13 @@ export function ResourceTable({
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
               <caption className="sr-only">{caption}</caption>
-              <thead className="border-b border-line bg-surface-sunken/50 text-[11px] tracking-wide text-ink-muted uppercase">
+              <thead className="border-b border-line bg-surface-sunken/50 text-xs text-ink-muted">
                 <tr>
+                  {selection && (
+                    <th scope="col" className="w-10 py-2.5 pr-0 pl-4">
+                      <SelectAllCheckbox rows={result.data} rowKey={rowKey} selection={selection} />
+                    </th>
+                  )}
                   {columns.map((c) => (
                     <th
                       key={c.key}
@@ -93,7 +124,7 @@ export function ResourceTable({
                             : 'descending'
                           : undefined
                       }
-                      className={`px-4 py-2.5 font-semibold whitespace-nowrap ${c.align === 'right' ? 'text-right' : ''}`}
+                      className={`px-4 py-2.5 font-medium whitespace-nowrap ${c.align === 'right' ? 'text-right' : ''}`}
                     >
                       {c.sortKey ? (
                         <SortHeader column={c} sort={sort} order={order} onSort={onSort} />
@@ -108,9 +139,30 @@ export function ResourceTable({
                 {result.data.map((row) => (
                   <tr
                     key={rowKey(row)}
-                    className={`transition-colors hover:bg-surface-sunken/60 ${onRowClick ? 'cursor-pointer' : ''}`}
+                    className={`transition-colors hover:bg-surface-sunken/60 ${onRowClick ? 'cursor-pointer' : ''} ${
+                      selection?.selected.includes(rowKey(row))
+                        ? 'bg-accent-soft/25 dark:bg-accent-soft/30'
+                        : ''
+                    }`}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                   >
+                    {selection && (
+                      <td className="w-10 py-3 pr-0 pl-4" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          aria-label={selection.rowLabel(row)}
+                          checked={selection.selected.includes(rowKey(row))}
+                          onChange={(e) =>
+                            selection.onChange(
+                              e.target.checked
+                                ? [...selection.selected, rowKey(row)]
+                                : selection.selected.filter((k) => k !== rowKey(row)),
+                            )
+                          }
+                          className="size-4 rounded border-line-strong accent-[var(--accent)]"
+                        />
+                      </td>
+                    )}
                     {columns.map((c) => (
                       <td
                         key={c.key}

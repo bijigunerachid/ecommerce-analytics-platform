@@ -68,9 +68,7 @@ function Navigation({ collapsed, onNavigate }) {
           {collapsed ? (
             <div aria-hidden="true" className="mx-3 mb-2 h-px bg-line first:hidden" />
           ) : (
-            <p className="mb-1.5 px-3 text-[11px] font-semibold tracking-wide text-ink-muted uppercase">
-              {group.label}
-            </p>
+            <p className="mb-1.5 px-3 text-xs font-medium text-ink-muted">{group.label}</p>
           )}
           <ul className="space-y-0.5">
             {group.items.map(({ to, label, icon: Icon, end }) => (

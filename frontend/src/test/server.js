@@ -38,8 +38,11 @@ export const handlers = [
   http.get(`${API}/categories`, () => HttpResponse.json(f.categoriesList)),
   http.get(`${API}/products`, () => HttpResponse.json(f.productsList)),
   http.get(`${API}/customers`, () => HttpResponse.json(f.customersList)),
+  http.get(`${API}/customers/:id`, () => HttpResponse.json({ customer: f.customer })),
   http.get(`${API}/orders`, () => HttpResponse.json(f.ordersList)),
   http.get(`${API}/orders/:id`, () => HttpResponse.json({ order: f.order })),
+  http.get(`${API}/orders/:id/history`, () => HttpResponse.json(f.orderHistory)),
+  http.get(`${API}/orders/:id/notes`, () => HttpResponse.json(f.orderNotes)),
   http.get(`${API}/inventory/movements`, () => HttpResponse.json(f.movementsList)),
   http.get(`${API}/users`, () => HttpResponse.json(f.usersList)),
 ];

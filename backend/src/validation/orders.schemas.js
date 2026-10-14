@@ -28,8 +28,34 @@ export const createOrderSchema = z.strictObject({
   // Note: prices and totals are intentionally NOT accepted from the client.
 });
 
+// Optional reason recorded in the status history (e.g. "Customer asked to cancel").
+const statusNoteSchema = z
+  .string()
+  .trim()
+  .min(1, 'Note must not be empty')
+  .max(500, 'Note must be at most 500 characters')
+  .optional();
+
 export const updateOrderStatusSchema = z.strictObject({
   status: z.enum(ORDER_STATUSES),
+  note: statusNoteSchema,
+});
+
+export const bulkUpdateOrderStatusSchema = z.strictObject({
+  orderIds: z
+    .array(idSchema)
+    .min(1, 'Select at least one order')
+    .max(100, 'At most 100 orders can be changed at once'),
+  status: z.enum(ORDER_STATUSES),
+  note: statusNoteSchema,
+});
+
+export const createOrderNoteSchema = z.strictObject({
+  body: z
+    .string()
+    .trim()
+    .min(1, 'Note must not be empty')
+    .max(2000, 'Note must be at most 2000 characters'),
 });
 
 export const ORDER_SORT_FIELDS = ['createdAt', 'totalAmount', 'status'];

@@ -360,6 +360,30 @@ export const order = {
   ],
 };
 const { items: _items, ...orderSummary } = order;
+
+export const orderHistory = {
+  history: [
+    {
+      id: 1,
+      fromStatus: null,
+      toStatus: 'pending',
+      note: null,
+      changedAt: '2026-03-01T10:00:00.000Z',
+      changedBy: { id: 1, fullName: 'Ada Admin' },
+    },
+  ],
+};
+
+export const orderNotes = {
+  notes: [
+    {
+      id: 1,
+      body: 'Customer asked for gift wrapping.',
+      createdAt: '2026-03-01T10:05:00.000Z',
+      author: { id: 1, fullName: 'Ada Admin' },
+    },
+  ],
+};
 export const ordersList = page([orderSummary]);
 
 export const movementsList = page([

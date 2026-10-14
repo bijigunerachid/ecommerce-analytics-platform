@@ -138,6 +138,68 @@ export function createOrdersRepository(db) {
       }
     },
 
+    /** Records a status the order entered (fromStatus is null when it was placed). */
+    async insertStatusHistory(client, { orderId, fromStatus, toStatus, userId, note, changedAt }) {
+      await client.query(
+        `INSERT INTO order_status_history (order_id, from_status, to_status, changed_by, note, changed_at)
+         VALUES ($1, $2, $3, $4, $5, COALESCE($6, now()))`,
+        [orderId, fromStatus, toStatus, userId ?? null, note ?? null, changedAt ?? null],
+      );
+    },
+
+    /** Status changes, oldest first, with the name of the staff member who made them. */
+    async listStatusHistory(orderId) {
+      const { rows } = await db.query(
+        `SELECT h.id, h.from_status, h.to_status, h.note, h.changed_at,
+                h.changed_by, u.full_name AS changed_by_name
+         FROM order_status_history h
+         LEFT JOIN users u ON u.id = h.changed_by
+         WHERE h.order_id = $1
+         ORDER BY h.changed_at, h.id`,
+        [orderId],
+      );
+      return rows.map((r) => ({
+        id: Number(r.id),
+        fromStatus: r.from_status,
+        toStatus: r.to_status,
+        note: r.note,
+        changedAt: r.changed_at,
+        changedBy:
+          r.changed_by === null ? null : { id: Number(r.changed_by), fullName: r.changed_by_name },
+      }));
+    },
+
+    async insertNote(orderId, { body, userId }) {
+      const { rows } = await db.query(
+        `INSERT INTO order_notes (order_id, author_id, body) VALUES ($1, $2, $3) RETURNING id`,
+        [orderId, userId, body],
+      );
+      return Number(rows[0].id);
+    },
+
+    /** Staff notes, oldest first. */
+    async listNotes(orderId) {
+      const { rows } = await db.query(
+        `SELECT n.id, n.body, n.created_at, n.author_id, u.full_name AS author_name
+         FROM order_notes n
+         LEFT JOIN users u ON u.id = n.author_id
+         WHERE n.order_id = $1
+         ORDER BY n.created_at, n.id`,
+        [orderId],
+      );
+      return rows.map((r) => ({
+        id: Number(r.id),
+        body: r.body,
+        createdAt: r.created_at,
+        author: r.author_id === null ? null : { id: Number(r.author_id), fullName: r.author_name },
+      }));
+    },
+
+    async exists(id) {
+      const { rows } = await db.query('SELECT 1 FROM orders WHERE id = $1', [id]);
+      return rows.length > 0;
+    },
+
     async updateStatus(client, id, status) {
       const { rows } = await client.query(
         'UPDATE orders SET status = $1 WHERE id = $2 RETURNING updated_at',

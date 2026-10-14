@@ -222,7 +222,11 @@ and **reuse the same value when retrying** it (e.g. after a timeout).
 | `GET /orders`               | any    | list (see filters)                       |
 | `GET /orders/:id`           | any    | includes `items`                         |
 | `POST /orders`              | admin  | requires `Idempotency-Key`               |
-| `PATCH /orders/:id/status`  | admin  | `{ "status": "paid" }`                   |
+| `PATCH /orders/:id/status`  | admin  | `{ "status": "paid", "note"?: "..." }`   |
+| `POST /orders/bulk-status`   | admin  | same change for up to 100 orders         |
+| `GET /orders/:id/history`    | any    | status history, oldest first             |
+| `GET /orders/:id/notes`      | any    | staff notes, oldest first                |
+| `POST /orders/:id/notes`     | admin  | `{ "body": "..." }` (1–2000 characters)  |
 
 Orders are never deleted; cancel them instead.
 
@@ -280,7 +284,48 @@ pending ──► paid ──► shipped ──► delivered
 
 Cancelling returns every line's quantity to stock through the ledger (`cancellation`
 movements). A cancelled order cannot be cancelled again, so stock is never restored twice.
-Each change emits an `order.status_changed` event.
+Each change emits an `order.status_changed` event and adds a row to the order's status
+history, with the staff member who made it and the optional `note` (1–500 characters, e.g. the
+reason for a cancellation).
+
+### `POST /orders/bulk-status`
+
+```json
+{ "orderIds": [41, 42, 57], "status": "shipped", "note": "Picked up by courier" }
+```
+
+Applies the same change to 1–100 orders. Each order changes in its own transaction (in id
+order) with the same rules as `PATCH /orders/:id/status`, so one order that cannot change does
+not block the others. The response lists both:
+
+```json
+{
+  "status": "shipped",
+  "updated": [41, 42],
+  "failed": [
+    { "orderId": 57, "code": "INVALID_STATUS_TRANSITION",
+      "message": "Cannot change order status from pending to shipped (allowed: paid, cancelled)" }
+  ]
+}
+```
+
+Unknown ids are reported in `failed` with `NOT_FOUND`.
+
+### `GET /orders/:id/history` and notes
+
+```json
+{ "history": [
+  { "id": 1, "fromStatus": null, "toStatus": "pending", "note": null,
+    "changedAt": "...", "changedBy": { "id": 1, "fullName": "Ada Admin" } },
+  { "id": 9, "fromStatus": "pending", "toStatus": "paid", "note": "Bank transfer received",
+    "changedAt": "...", "changedBy": { "id": 1, "fullName": "Ada Admin" } }
+] }
+```
+
+The first entry (`fromStatus: null`) is the placement. `changedBy` is `null` when no staff
+member is recorded (sample data, or a deleted account). `GET /orders/:id/notes` returns
+`{ notes: [{ id, body, createdAt, author: { id, fullName } | null }] }`; `POST` returns
+`201 { note }`. Notes are internal (staff only).
 
 ### `GET /orders`
 
