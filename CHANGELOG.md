@@ -30,6 +30,10 @@ All notable changes to this project are documented here. The format follows
 - Printable invoices (`/orders/:id/invoice`).
 - Customer pages: segment, lifetime value, monthly spend, most-bought products, and orders
   (`GET /api/customers/:id/insights`).
+- CSV exports (plain or Excel-friendly) of orders, products, customers, stock movements, the
+  audit log, daily sales, and top products, using the filters on screen; protected against CSV
+  injection, limited to 100,000 rows, and recorded in the audit log (`GET /api/exports/:name.csv`).
+- Reports page: a printable sales report for any period.
 - Account page: change your name and password, and sign out other sessions. Session versions
   make password changes, resets, and deactivation end existing sessions immediately.
 - User administration: edit name, role, and active state, and reset passwords, with protection

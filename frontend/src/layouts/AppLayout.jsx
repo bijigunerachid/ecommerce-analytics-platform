@@ -267,7 +267,7 @@ function ThemeToggle() {
 
 function TopBar({ onOpenMenu, onOpenPalette, onOpenHelp }) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-page/85 px-4 backdrop-blur-md sm:gap-3 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-page/85 px-4 backdrop-blur-md sm:gap-3 sm:px-6 lg:px-8 print:hidden">
       <Button
         variant="ghost"
         size="icon"
@@ -371,7 +371,7 @@ export function AppLayout() {
 
       <aside
         aria-label="Sidebar"
-        className={`fixed inset-y-0 left-0 hidden border-r border-line bg-sidebar transition-[width] duration-200 lg:block ${sidebarWidth}`}
+        className={`fixed inset-y-0 left-0 hidden border-r border-line bg-sidebar transition-[width] duration-200 lg:block print:hidden ${sidebarWidth}`}
       >
         <SidebarContent collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       </aside>
@@ -399,13 +399,16 @@ export function AppLayout() {
         </div>
       )}
 
-      <div className={`transition-[padding] duration-200 ${contentOffset}`}>
+      <div className={`transition-[padding] duration-200 print:pl-0 ${contentOffset}`}>
         <TopBar
           onOpenMenu={() => setDrawerOpen(true)}
           onOpenPalette={openPalette}
           onOpenHelp={openHelp}
         />
-        <main id="main" className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main
+          id="main"
+          className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:max-w-none print:p-0"
+        >
           <Outlet />
         </main>
       </div>

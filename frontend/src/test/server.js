@@ -40,6 +40,9 @@ export const handlers = [
     HttpResponse.json({ unreadCount: 0, lastReadAt: '2026-03-11T10:00:00.000Z' }),
   ),
   http.get(`${API}/activity`, () => HttpResponse.json(f.activity)),
+  http.get(`${API}/audit-log`, () =>
+    HttpResponse.json({ data: [], pagination: { page: 1, pageSize: 25, total: 0, totalPages: 0 } }),
+  ),
   http.get(`${API}/categories`, () => HttpResponse.json(f.categoriesList)),
   http.get(`${API}/products`, () => HttpResponse.json(f.productsList)),
   http.get(`${API}/customers`, () => HttpResponse.json(f.customersList)),

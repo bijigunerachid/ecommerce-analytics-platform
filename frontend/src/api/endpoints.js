@@ -71,6 +71,16 @@ export const usersApi = {
   resetPassword: (id, password) => api.post(`/users/${id}/password`, { password }),
 };
 
+export const exportsApi = {
+  /** Downloads /exports/<name>.csv with the given list filters; resolves to { blob, filename }. */
+  download: (name, params, format = 'csv') =>
+    api.get(`/exports/${name}.csv`, {
+      params: { ...params, format },
+      headers: { Accept: 'text/csv' },
+      responseType: 'blob',
+    }),
+};
+
 export const auditApi = {
   list: (params, options) => api.get('/audit-log', { params, ...options }),
 };

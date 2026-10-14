@@ -1,5 +1,6 @@
 import {
   Boxes,
+  FileChartColumn,
   LayoutDashboard,
   Package,
   ReceiptText,
@@ -16,7 +17,10 @@ import {
 export const NAV_GROUPS = [
   {
     label: 'Overview',
-    items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true, key: 'd' }],
+    items: [
+      { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true, key: 'd' },
+      { to: '/reports', label: 'Reports', icon: FileChartColumn, key: 'r' },
+    ],
   },
   {
     label: 'Sales',

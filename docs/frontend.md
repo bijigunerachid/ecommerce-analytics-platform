@@ -111,6 +111,17 @@ src/
   with the header checkbox) and apply a status to all of them. Orders that could not change are
   listed with the reason. The selection clears when the page or a filter changes.
 
+## Reports and exports
+
+- **Export** menus on the Orders, Products, Customers, Inventory, and Audit log pages download
+  everything that matches the filters on screen, as CSV or as CSV for Excel. The file is fetched
+  with the session cookie; errors such as "too many rows" appear as a message instead of a
+  broken download.
+- **Reports** (`/reports`): a sales report for any period (same range control as the
+  dashboard): summary with changes against the previous period, top 10 products, revenue by
+  category, orders by status, and sales by day. *Print or save as PDF* prints only the report
+  (the app shell has `print:hidden`); the daily sales and top products can be downloaded.
+
 ## Account and administration
 
 - **Account** (`/account`, from the account menu): change your name, change your password (with
