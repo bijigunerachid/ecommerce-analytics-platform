@@ -31,8 +31,14 @@ const resource = (base) => ({
 });
 
 export const categoriesApi = resource('/categories');
-export const productsApi = resource('/products');
-export const customersApi = resource('/customers');
+export const productsApi = {
+  ...resource('/products'),
+  insights: (id, params, options) => api.get(`/products/${id}/insights`, { params, ...options }),
+};
+export const customersApi = {
+  ...resource('/customers'),
+  insights: (id, options) => api.get(`/customers/${id}/insights`, options),
+};
 
 export const ordersApi = {
   list: (params, options) => api.get('/orders', { params, ...options }),

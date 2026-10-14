@@ -1,5 +1,6 @@
 import { Package, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { categoriesApi, productsApi } from '../api/endpoints.js';
 import { usePermissions } from '../auth/usePermissions.js';
 import {
@@ -236,7 +237,11 @@ export function ProductsPage() {
       key: 'name',
       label: 'Name',
       sortKey: 'name',
-      render: (p) => <span className="font-medium">{p.name}</span>,
+      render: (p) => (
+        <Link to={`/products/${p.id}`} className="font-medium hover:text-accent hover:underline">
+          {p.name}
+        </Link>
+      ),
     },
     {
       key: 'categoryName',

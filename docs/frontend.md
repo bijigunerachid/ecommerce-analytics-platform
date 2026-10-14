@@ -111,6 +111,17 @@ src/
   with the header checkbox) and apply a status to all of them. Orders that could not change are
   listed with the reason. The selection clears when the page or a filter changes.
 
+## Customer and product pages
+
+- **Customer** (`/customers/:id`, linked from the customer list and search): contact details,
+  segment, lifetime value, orders (with cancellations), average order, last order, spend per
+  month for 12 months (bars, with a table view), most-bought products, and their orders.
+- **Product** (`/products/:id`): units sold per day and stock at the end of each day (two
+  separate charts, never two y-axes; the reorder level is a dashed reference line), with a
+  30/90/180-day period kept in the URL. A stock panel shows days of stock left and the restock
+  suggestion; admins restock the suggested quantity in one click (the regular, idempotent
+  stock adjustment). Below, every stock movement of the product.
+
 ## App shell and navigation
 
 - **Sidebar:** sections grouped as Overview, Sales, Catalog, and Administration (admins only).

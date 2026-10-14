@@ -29,3 +29,12 @@ export const MOVEMENT_REASON_LABELS = {
   restock: 'Restock',
   adjustment: 'Adjustment',
 };
+
+/** Customer segments; rules in the backend's insights service (see docs/api.md). */
+export const SEGMENT_LABELS = {
+  prospect: 'No orders yet',
+  new: 'New customer',
+  returning: 'Returning',
+  loyal: 'Loyal',
+  lapsed: 'Lapsed',
+};

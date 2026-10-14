@@ -66,7 +66,7 @@ function useRecordSearch(query) {
               icon: Package,
               label: p.name,
               hint: `${p.sku} · ${formatMoney(p.price)}`,
-              to: `/products?search=${encodeURIComponent(p.sku)}`,
+              to: `/products/${p.id}`,
             })),
           },
           {
@@ -76,7 +76,7 @@ function useRecordSearch(query) {
               icon: User,
               label: `${c.firstName} ${c.lastName}`,
               hint: c.email,
-              to: `/customers?search=${encodeURIComponent(c.email)}`,
+              to: `/customers/${c.id}`,
             })),
           },
         ].filter((g) => g.items.length > 0),

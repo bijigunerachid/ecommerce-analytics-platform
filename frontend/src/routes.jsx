@@ -19,6 +19,8 @@ export const pageLoaders = {
   UsersPage: () => import('./pages/UsersPage.jsx'),
   NotFoundPage: () => import('./pages/NotFoundPage.jsx'),
   InvoicePage: () => import('./pages/InvoicePage.jsx'),
+  CustomerDetailPage: () => import('./pages/CustomerDetailPage.jsx'),
+  ProductDetailPage: () => import('./pages/ProductDetailPage.jsx'),
 };
 const DashboardPage = lazyPage(pageLoaders.DashboardPage, 'DashboardPage');
 const OrdersPage = lazyPage(pageLoaders.OrdersPage, 'OrdersPage');
@@ -31,6 +33,8 @@ const InventoryPage = lazyPage(pageLoaders.InventoryPage, 'InventoryPage');
 const UsersPage = lazyPage(pageLoaders.UsersPage, 'UsersPage');
 const NotFoundPage = lazyPage(pageLoaders.NotFoundPage, 'NotFoundPage');
 const InvoicePage = lazyPage(pageLoaders.InvoicePage, 'InvoicePage');
+const CustomerDetailPage = lazyPage(pageLoaders.CustomerDetailPage, 'CustomerDetailPage');
+const ProductDetailPage = lazyPage(pageLoaders.ProductDetailPage, 'ProductDetailPage');
 
 const page = (element) => (
   <Suspense fallback={<LoadingState label="Loading page" className="h-96" />}>{element}</Suspense>
@@ -50,8 +54,10 @@ export const routes = [
           { path: 'orders', element: page(<OrdersPage />) },
           { path: 'orders/:id', element: page(<OrderDetailPage />) },
           { path: 'products', element: page(<ProductsPage />) },
+          { path: 'products/:id', element: page(<ProductDetailPage />) },
           { path: 'categories', element: page(<CategoriesPage />) },
           { path: 'customers', element: page(<CustomersPage />) },
+          { path: 'customers/:id', element: page(<CustomerDetailPage />) },
           { path: 'inventory', element: page(<InventoryPage />) },
           // UI-level guards; the API enforces the same roles.
           {

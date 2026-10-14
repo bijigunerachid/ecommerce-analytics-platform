@@ -333,6 +333,58 @@ Filters: `status`, `customerId`, `dateFrom`, `dateTo` (`YYYY-MM-DD`, UTC, both i
 `minTotal`, `maxTotal`. `search` matches customer name or email, or the exact order number.
 `sort`: `createdAt` (default, **newest first**), `totalAmount`, `status`.
 
+## Customer and product insights
+
+Figures for one customer or product, computed from orders, order lines, and the stock ledger
+(the system of record, so they are current to the second). Any signed-in role. Cancelled orders
+are excluded from spend and sales. Days and months are UTC. Unknown ids return `404`.
+
+### `GET /customers/:id/insights`
+
+```json
+{ "insights": {
+  "customerId": 5, "segment": "returning",
+  "orders": 3, "cancelledOrders": 1, "netOrders": 2,
+  "lifetimeValue": "1060.00", "averageOrderValue": "530.00",
+  "firstOrderAt": "...", "lastOrderAt": "...",
+  "monthly": [ { "month": "2026-03-01T00:00:00.000Z", "orders": 2, "spent": "1060.00" } ],
+  "topProducts": [ { "productId": 3, "sku": "LAP-1", "name": "Laptop Pro", "units": 1, "spent": "1000.00" } ]
+} }
+```
+
+`monthly` always has the last 12 calendar months (months without orders are zero);
+`topProducts` the 5 products with the highest spend. `segment` follows simple rules on
+non-cancelled orders:
+
+| Segment | Rule |
+| --- | --- |
+| `prospect` | no orders |
+| `lapsed` | last order more than 90 days ago |
+| `loyal` | 4 or more orders |
+| `returning` | 2 or 3 orders |
+| `new` | 1 order |
+
+### `GET /products/:id/insights?days=90`
+
+`days` is 7–366 (default 90).
+
+```json
+{ "insights": {
+  "productId": 10, "range": { "days": 90, "from": "...", "to": "..." },
+  "unitsSold": 217, "revenue": "281883.00", "orders": 141,
+  "stock": 39, "reorderLevel": 8,
+  "restock": { "dailyUnits": 3.47, "daysOfCover": 11.3, "targetStock": 112,
+               "suggestedQuantity": 73, "needsRestock": true },
+  "daily": [ { "day": "...", "units": 2, "revenue": "2598.00", "orders": 2, "stockEnd": 41 } ]
+} }
+```
+
+`daily.stockEnd` is the stock at the end of each day, rebuilt from the ledger (`null` for days
+before the product was created). Restock advice uses the sales of the last 30 days:
+`daysOfCover` = stock ÷ daily sales (`null` without recent sales); the target is 30 days of
+sales plus the reorder level, and `suggestedQuantity` is what is missing to reach it.
+`needsRestock` is true at or below the reorder level, or with less than 14 days of cover.
+
 ## Inventory
 
 ### `GET /inventory/movements`

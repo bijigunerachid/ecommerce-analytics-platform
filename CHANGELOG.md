@@ -28,6 +28,10 @@ All notable changes to this project are documented here. The format follows
 - Bulk status changes (`POST /api/orders/bulk-status`) with row selection on the Orders list;
   each order changes on its own and failures are reported per order.
 - Printable invoices (`/orders/:id/invoice`).
+- Customer pages: segment, lifetime value, monthly spend, most-bought products, and orders
+  (`GET /api/customers/:id/insights`).
+- Product pages: daily sales, end-of-day stock rebuilt from the ledger, days of stock left, and
+  a one-click restock of the suggested quantity (`GET /api/products/:id/insights`).
 
 ## [1.0.0] - 2026-10-14
 

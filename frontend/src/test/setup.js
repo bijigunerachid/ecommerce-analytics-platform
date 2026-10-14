@@ -4,8 +4,8 @@ import { afterAll, afterEach, beforeAll } from 'vitest';
 import { server } from './server.js';
 
 // jsdom lacks these browser APIs; charts and the theme provider use them.
-// Many test files render the whole app in parallel; allow more than the 1 s default.
-configure({ asyncUtilTimeout: 3000 });
+// Many test files render the whole app in parallel; allow well over the 1 s default.
+configure({ asyncUtilTimeout: 5000 });
 
 class ResizeObserverStub {
   observe() {}
