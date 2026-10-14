@@ -10,6 +10,7 @@ import {
   SearchInput,
 } from '../components/data/ResourceTable.jsx';
 import { Button } from '../components/ui/Button.jsx';
+import { ExportMenu } from '../components/data/ExportMenu.jsx';
 import { Card } from '../components/ui/Card.jsx';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx';
 import { FormError, TextField } from '../components/ui/Field.jsx';
@@ -239,11 +240,14 @@ export function CustomersPage() {
         icon={Users}
         description="Order counts and spending exclude cancelled orders."
         actions={
-          canEdit && (
-            <Button onClick={() => setEditing('new')}>
-              <Plus aria-hidden="true" className="size-4" /> New customer
-            </Button>
-          )
+          <>
+            <ExportMenu name="customers" params={cleanParams(params)} />
+            {canEdit && (
+              <Button onClick={() => setEditing('new')}>
+                <Plus aria-hidden="true" className="size-4" /> New customer
+              </Button>
+            )}
+          </>
         }
       />
       <Card>

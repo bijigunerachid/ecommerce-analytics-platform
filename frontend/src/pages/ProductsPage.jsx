@@ -11,6 +11,7 @@ import {
 } from '../components/data/ResourceTable.jsx';
 import { ActiveBadge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
+import { ExportMenu } from '../components/data/ExportMenu.jsx';
 import { Card } from '../components/ui/Card.jsx';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx';
 import {
@@ -301,11 +302,14 @@ export function ProductsPage() {
         icon={Package}
         description="Catalog, prices, and current stock."
         actions={
-          canEdit && (
-            <Button onClick={() => setEditing('new')}>
-              <Plus aria-hidden="true" className="size-4" /> New product
-            </Button>
-          )
+          <>
+            <ExportMenu name="products" params={cleanParams(params)} />
+            {canEdit && (
+              <Button onClick={() => setEditing('new')}>
+                <Plus aria-hidden="true" className="size-4" /> New product
+              </Button>
+            )}
+          </>
         }
       />
       <Card>

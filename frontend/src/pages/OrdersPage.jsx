@@ -12,6 +12,7 @@ import {
 import { OrderStatusBadge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { buttonClass } from '../components/ui/button-styles.js';
+import { ExportMenu } from '../components/data/ExportMenu.jsx';
 import { Card } from '../components/ui/Card.jsx';
 import { FilterSelect } from '../components/ui/Field.jsx';
 import { useToast } from '../components/ui/toast-context.js';
@@ -145,11 +146,14 @@ export function OrdersPage() {
         icon={ReceiptText}
         description="Totals are calculated by the server from current prices."
         actions={
-          canEdit && (
-            <Link to="/orders/new" className={buttonClass()}>
-              <Plus aria-hidden="true" className="size-4" /> New order
-            </Link>
-          )
+          <>
+            <ExportMenu name="orders" params={cleanParams(params)} />
+            {canEdit && (
+              <Link to="/orders/new" className={buttonClass()}>
+                <Plus aria-hidden="true" className="size-4" /> New order
+              </Link>
+            )}
+          </>
         }
       />
       <Card>

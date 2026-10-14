@@ -64,4 +64,5 @@ export const AUDIT_ACTION_LABELS = {
   'customer.created': 'Customer created',
   'customer.updated': 'Customer updated',
   'customer.deleted': 'Customer deleted',
+  'export.downloaded': 'Data exported',
 };

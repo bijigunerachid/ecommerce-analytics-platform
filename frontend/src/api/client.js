@@ -36,10 +36,19 @@ function toQuery(params) {
 /**
  * @param {string} path - e.g. '/analytics/overview'
  * @param {{ method?: string, body?: unknown, params?: object, headers?: object,
- *           signal?: AbortSignal, skipUnauthorizedEvent?: boolean }} [options]
+ *           signal?: AbortSignal, skipUnauthorizedEvent?: boolean, responseType?: 'blob' }} [options]
+ *   responseType 'blob': a successful response resolves to { blob, filename } (downloads)
  */
 export async function apiRequest(path, options = {}) {
-  const { method = 'GET', body, params, headers, signal, skipUnauthorizedEvent } = options;
+  const {
+    method = 'GET',
+    body,
+    params,
+    headers,
+    signal,
+    skipUnauthorizedEvent,
+    responseType,
+  } = options;
   let response;
   try {
     response = await fetch(`${API_BASE}${path}${toQuery(params)}`, {
@@ -59,6 +68,11 @@ export async function apiRequest(path, options = {}) {
   }
 
   if (response.status === 204) return null;
+  if (response.ok && responseType === 'blob') {
+    const disposition = response.headers.get('Content-Disposition') ?? '';
+    const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? 'download';
+    return { blob: await response.blob(), filename };
+  }
   const text = await response.text();
   let data = null;
   try {

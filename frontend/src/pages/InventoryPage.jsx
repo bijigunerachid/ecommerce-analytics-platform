@@ -7,6 +7,7 @@ import { EntityPicker } from '../components/data/EntityPicker.jsx';
 import { FilterBar, PageHeader, ResourceTable } from '../components/data/ResourceTable.jsx';
 import { Badge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
+import { ExportMenu } from '../components/data/ExportMenu.jsx';
 import { Card } from '../components/ui/Card.jsx';
 import { FilterSelect, FormError, SelectField, TextField } from '../components/ui/Field.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
@@ -93,11 +94,14 @@ export function InventoryPage() {
         icon={Boxes}
         description="The ledger of every stock change: orders, cancellations, restocks, and adjustments."
         actions={
-          canEdit && (
-            <Button onClick={() => setAdjusting(true)}>
-              <PackagePlus aria-hidden="true" className="size-4" /> Adjust stock
-            </Button>
-          )
+          <>
+            <ExportMenu name="inventory-movements" params={cleanParams(params)} />
+            {canEdit && (
+              <Button onClick={() => setAdjusting(true)}>
+                <PackagePlus aria-hidden="true" className="size-4" /> Adjust stock
+              </Button>
+            )}
+          </>
         }
       />
       <Card>

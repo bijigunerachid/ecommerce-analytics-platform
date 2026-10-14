@@ -8,6 +8,7 @@ import {
   ResourceTable,
   SearchInput,
 } from '../components/data/ResourceTable.jsx';
+import { ExportMenu } from '../components/data/ExportMenu.jsx';
 import { Badge } from '../components/ui/Badge.jsx';
 import { Card } from '../components/ui/Card.jsx';
 import { FilterSelect } from '../components/ui/Field.jsx';
@@ -168,6 +169,7 @@ export function AuditLogPage() {
         title="Audit log"
         icon={ScrollText}
         description="Every sign-in and change, newest first. Entries cannot be edited or deleted."
+        actions={<ExportMenu name="audit-log" params={cleanParams(params)} />}
       />
       <Card>
         <FilterBar>

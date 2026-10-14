@@ -124,6 +124,34 @@ user out everywhere (reactivating does not restore old sessions).
 `{ "password": "..." }` → `200 { user }`. Sets a new password for another user and signs them
 out everywhere. Your own password is changed with `POST /auth/password` (`409` otherwise).
 
+## Exports
+
+### `GET /exports/:name.csv`
+
+Downloads a CSV of every row that matches the same filters as the corresponding list or report
+(paging parameters are ignored). Any signed-in role, except `audit-log` (admin only).
+
+| Name | Filters (as in) |
+| --- | --- |
+| `orders` | `GET /orders` |
+| `products` | `GET /products` |
+| `customers` | `GET /customers` |
+| `inventory-movements` | `GET /inventory/movements` |
+| `audit-log` | `GET /audit-log` |
+| `sales-daily` | `from`, `to` (one row per UTC day, like `GET /analytics/revenue?interval=day`) |
+| `top-products` | `from`, `to`, `sortBy` (top 50) |
+
+- `format=csv` (default): comma-separated, UTF-8. `format=excel`: semicolon-separated with a
+  UTF-8 byte order mark, which Excel opens correctly in locales that use a decimal comma.
+- Rows end with CRLF; dates are ISO 8601 UTC; money is a plain decimal (`1299.00`).
+- Text cells that start with `=`, `+`, `-`, `@`, tab, or carriage return get a leading
+  apostrophe, so a spreadsheet does not run them as formulas (CSV injection). Numbers are not
+  changed, so negative quantities stay numeric.
+- Exports over 100,000 rows are refused with `400 EXPORT_TOO_LARGE` before anything is sent;
+  narrow the filters. Rows are streamed in pages of 1,000, so a change made during a long export
+  can move a row between pages.
+- Each download is recorded in the audit log (`export.downloaded`, with the row count and filters).
+
 ## Audit log (admin only)
 
 ### `GET /audit-log`
@@ -144,8 +172,8 @@ Recorded actions: `auth.login`, `auth.login_failed` (with the attempted email, n
 `auth.logout`, `account.profile_updated`, `account.password_changed`,
 `account.sessions_revoked`, `user.created`, `user.updated`, `user.password_reset`,
 `order.created`, `order.status_changed`, `order.bulk_status_changed`, `order.note_added`,
-`inventory.adjusted`, and `created`/`updated`/`deleted` for `product`, `category`, and
-`customer`. Updates record the changed fields as `{ from, to }`. Idempotent replays are not
+`inventory.adjusted`, `export.downloaded`, and `created`/`updated`/`deleted` for `product`,
+`category`, and `customer`. Updates record the changed fields as `{ from, to }`. Idempotent replays are not
 recorded twice. Passwords and tokens are never recorded. `actor` is `null` for the
 `create-admin` script.
 
