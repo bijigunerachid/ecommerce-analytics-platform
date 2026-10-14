@@ -76,8 +76,10 @@ src/
                 useDateRange (list/range state in the URL), useForm (values, errors, submit)
   components/   ui/ (buttons, fields, modal, toasts, badges), charts/, and data/ (sortable
                 paginated ResourceTable, EntityPicker combobox)
-  features/     dashboard panels, each fetching its own data
-  layouts/      app shell: sidebar on desktop, drawer on mobile
+  features/     dashboard panels (each fetching its own data), command palette and keyboard
+                shortcuts, sidebar pipeline status
+  layouts/      app shell (grouped sidebar, top bar, drawer on mobile) and navigation.js, the
+                one list of sections used by the sidebar, breadcrumbs, palette, and shortcuts
   pages/        Login, Dashboard (lazy-loaded), Orders, Order, New order, Products,
                 Categories, Customers, Inventory, Users, Not found
   routes.jsx    route table (used by the app and by tests)
@@ -95,8 +97,33 @@ src/
 - **Code splitting:** the dashboard and charting library load lazily, so the sign-in page stays
   light.
 
+## App shell and navigation
+
+- **Sidebar:** sections grouped as Overview, Sales, Catalog, and Administration (admins only).
+  On large screens it collapses to an icon rail (remembered per browser); below 1024px it is a
+  drawer. Its footer shows live pipeline status (relay + Spark, Kafka lag), polled every 30 s.
+- **Top bar:** breadcrumbs, search, a light/dark toggle, the shortcut list, and the account menu
+  (name, role, theme choice, sign out). The menu follows the WAI-ARIA menu button pattern
+  (arrow keys, Home/End, Escape returns focus to the button).
+- **Command palette** (`Ctrl`/`⌘` + `K`, or `/`): jump to any page, run quick actions (new
+  order, theme), and search orders, products, and customers through the list APIs (5 results
+  each, debounced). It is a combobox with a listbox (`aria-activedescendant`), so screen readers
+  announce the highlighted result while focus stays in the input. Results open the matching list
+  filtered by `?search=`; the list's search box follows the URL.
+- **Keyboard shortcuts:** `g` then a page key (`d` dashboard, `o` orders, `c` customers,
+  `p` products, `t` categories, `i` inventory, `u` users) and `?` for the list. Single-key
+  shortcuts are ignored while typing and while a dialog is open.
+- **Dashboard live mode:** the *Live* toggle refreshes every panel every 15 s (remembered per
+  browser). Refetches keep the current data on screen, so nothing flashes.
+
 ## Visual design and accessibility
 
+- **Typography:** Inter (variable), self-hosted through `@fontsource-variable/inter` and bundled
+  by Vite, because the Content-Security-Policy allows fonts only from the app's own origin.
+- **Loading:** first loads show skeleton placeholders shaped like the content (table rows, panel
+  blocks); the shimmer stops under `prefers-reduced-motion`.
+- **KPI tiles** carry a small trend line of the daily series from `/api/analytics/revenue`
+  (decorative and hidden from screen readers; the figure and its change are stated in text).
 - **Tokens:** colors are CSS variables in `src/index.css`, mapped to Tailwind utilities
   (`bg-surface`, `text-ink-secondary`, …). Dark mode redefines the same tokens under `.dark`, and
   the saved theme is applied before first paint, so there is no light flash.

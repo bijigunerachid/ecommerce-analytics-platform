@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Redesigned interface: Inter typography, refined surfaces and elevation, skeleton loading
+  states, richer empty and error states, page headers with icons, numbered pagination, and a
+  split-screen sign-in page with a password visibility toggle.
+- App shell with a grouped, collapsible sidebar, breadcrumbs, and an account menu (theme choice,
+  shortcuts, sign out).
+
+### Added
+
+- Command palette (`Ctrl`/`⌘` + `K`) to jump to pages, run quick actions, and search orders,
+  products, and customers.
+- Keyboard shortcuts (`g` then a page key, `?` for the list).
+- Live pipeline status in the sidebar.
+- Dashboard live mode (auto-refresh every 15 seconds) and trend lines in the KPI tiles.
+
 ## [1.0.0] - 2026-10-14
 
 First complete release: an e-commerce operations app with a real-time analytics pipeline that

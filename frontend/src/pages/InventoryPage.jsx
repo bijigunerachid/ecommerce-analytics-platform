@@ -1,4 +1,4 @@
-import { PackagePlus } from 'lucide-react';
+import { Boxes, PackagePlus } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { inventoryApi, productsApi } from '../api/endpoints.js';
@@ -194,6 +194,7 @@ export function InventoryPage() {
     <div className="space-y-4">
       <PageHeader
         title="Inventory"
+        icon={Boxes}
         description="The ledger of every stock change: orders, cancellations, restocks, and adjustments."
         actions={
           canEdit && (

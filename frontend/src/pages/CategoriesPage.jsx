@@ -1,4 +1,4 @@
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Tags, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { categoriesApi } from '../api/endpoints.js';
 import { usePermissions } from '../auth/usePermissions.js';
@@ -155,6 +155,7 @@ export function CategoriesPage() {
     <div className="space-y-4">
       <PageHeader
         title="Categories"
+        icon={Tags}
         description="Group products for browsing and reporting."
         actions={
           canEdit && (

@@ -1,24 +1,51 @@
-import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Ban,
+  Minus,
+  ReceiptText,
+  ShoppingBag,
+  UserPlus,
+  Wallet,
+} from 'lucide-react';
 import { analyticsApi } from '../../api/endpoints.js';
+import { Sparkline } from '../../components/charts/Sparkline.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { ErrorState } from '../../components/ui/States.jsx';
 import { useApiQuery } from '../../hooks/useApiQuery.js';
 import { formatMoney, formatNumber, formatPercent } from '../../utils/format.js';
 
 const TILES = [
-  { key: 'orders', label: 'Orders', format: (v) => formatNumber(v), upIsGood: true },
+  {
+    key: 'orders',
+    label: 'Orders',
+    icon: ReceiptText,
+    format: (v) => formatNumber(v),
+    upIsGood: true,
+    trend: (b) => b.orders,
+  },
   {
     key: 'averageOrderValue',
     label: 'Average order value',
+    icon: ShoppingBag,
     format: (v) => formatMoney(v),
     upIsGood: true,
+    trend: (b) => b.averageOrderValue,
   },
-  { key: 'newCustomers', label: 'New customers', format: (v) => formatNumber(v), upIsGood: true },
+  {
+    key: 'newCustomers',
+    label: 'New customers',
+    icon: UserPlus,
+    format: (v) => formatNumber(v),
+    upIsGood: true,
+  },
   {
     key: 'cancellationRate',
     label: 'Cancellation rate',
+    icon: Ban,
     format: (v) => formatPercent(v),
     upIsGood: false,
+    trend: (b) => (b.orders ? b.cancelledOrders / b.orders : 0),
   },
 ];
 
@@ -47,11 +74,29 @@ export function Delta({ value, upIsGood, period }) {
   );
 }
 
+function TileLabel({ icon: Icon, children }) {
+  return (
+    <p className="flex items-center gap-2 text-xs font-medium text-ink-secondary">
+      <span className="flex size-6 items-center justify-center rounded-md bg-accent-soft/50 dark:bg-accent-soft/60">
+        <Icon aria-hidden="true" className="size-3.5 text-accent-strong dark:text-ink" />
+      </span>
+      {children}
+    </p>
+  );
+}
+
 export function KpiTiles({ range, refreshKey }) {
   const query = useApiQuery(
     (signal) => analyticsApi.overview({ from: range.from, to: range.to }, { signal }),
     [range.from, range.to, refreshKey],
   );
+  // Daily series for the trend lines (decorative; the figures above them are the data).
+  const trendQuery = useApiQuery(
+    (signal) =>
+      analyticsApi.revenue({ from: range.from, to: range.to, interval: 'day' }, { signal }),
+    [range.from, range.to, refreshKey],
+  );
+  const series = trendQuery.data?.series ?? [];
 
   if (query.error && !query.data) {
     return (
@@ -63,16 +108,14 @@ export function KpiTiles({ range, refreshKey }) {
 
   const data = query.data;
   const period = data ? `previous ${data.range.days} days` : 'previous period';
-  const placeholder = (
-    <span className="inline-block h-7 w-24 animate-pulse rounded bg-surface-sunken" />
-  );
+  const placeholder = <span className="skeleton inline-block h-7 w-24 align-middle" />;
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-6" aria-busy={query.isFetching}>
       {/* The one hero figure of the view. */}
-      <Card className="col-span-2 p-5">
-        <p className="text-sm text-ink-secondary">Net revenue</p>
-        <p className="mt-1 text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
+      <Card className="relative col-span-2 flex flex-col overflow-hidden p-5">
+        <TileLabel icon={Wallet}>Net revenue</TileLabel>
+        <p className="mt-3 text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
           {data ? formatMoney(data.current.netRevenue, { compact: true }) : placeholder}
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -84,11 +127,15 @@ export function KpiTiles({ range, refreshKey }) {
             </p>
           )}
         </div>
+        <Sparkline
+          values={series.map((b) => b.netRevenue)}
+          className="-mx-5 -mb-5 mt-auto h-14 w-[calc(100%+2.5rem)] pt-3 text-series-1"
+        />
       </Card>
       {TILES.map((tile) => (
-        <Card key={tile.key} className="p-4">
-          <p className="text-xs text-ink-secondary">{tile.label}</p>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+        <Card key={tile.key} className="flex flex-col p-4">
+          <TileLabel icon={tile.icon}>{tile.label}</TileLabel>
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-ink">
             {data ? tile.format(data.current[tile.key]) : placeholder}
           </p>
           <div className="mt-1.5">
@@ -96,6 +143,13 @@ export function KpiTiles({ range, refreshKey }) {
               <Delta value={data.change[tile.key]} upIsGood={tile.upIsGood} period={period} />
             )}
           </div>
+          {tile.trend && (
+            <Sparkline
+              values={series.map(tile.trend)}
+              fill={false}
+              className="mt-auto h-8 w-full pt-2 text-series-1"
+            />
+          )}
         </Card>
       ))}
     </div>

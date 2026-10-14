@@ -69,7 +69,7 @@ export function Modal({
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
       <div
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
         aria-hidden="true"
         onClick={() => !busy && onClose()}
       />
@@ -80,11 +80,11 @@ export function Modal({
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
-        className={`relative flex max-h-[92dvh] w-full ${width} flex-col rounded-t-xl border border-line bg-surface shadow-xl outline-none sm:rounded-xl`}
+        className={`relative flex max-h-[92dvh] w-full ${width} animate-pop-in flex-col rounded-t-2xl border border-line bg-surface-raised shadow-pop outline-none sm:rounded-2xl`}
       >
-        <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+        <header className="flex items-start justify-between gap-4 px-6 pt-5 pb-3">
           <div>
-            <h2 id={titleId} className="text-base font-semibold text-ink">
+            <h2 id={titleId} className="text-lg font-semibold tracking-tight text-ink">
               {title}
             </h2>
             {description && (
@@ -97,11 +97,11 @@ export function Modal({
             <X aria-hidden="true" className="size-4" />
           </Button>
         </header>
-        <div data-modal-body className="overflow-y-auto px-5 py-4">
+        <div data-modal-body className="overflow-y-auto px-6 py-3">
           {children}
         </div>
         {footer && (
-          <footer className="flex flex-wrap justify-end gap-2 border-t border-line px-5 py-3">
+          <footer className="mt-2 flex flex-wrap justify-end gap-2 rounded-b-2xl border-t border-line bg-surface px-6 py-3.5">
             {footer}
           </footer>
         )}

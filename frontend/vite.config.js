@@ -21,9 +21,22 @@ export default defineConfig(({ mode }) => {
       proxy: { '/api': { target: apiTarget, changeOrigin: false } },
     },
     build: {
-      // The entry chunk is React DOM + React Router (~170 kB gzipped); the charting library
-      // is split into the lazily loaded dashboard chunk. Warn only above that baseline.
+      // The react-vendor chunk (~160 kB gzipped) is the framework itself and cannot shrink
+      // further; warn only if a chunk grows beyond it.
       chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          // React, React DOM, and React Router in their own chunk: they change far less often
+          // than the app, so browsers keep them cached across releases. Pages and the charting
+          // library are split per route (lazy imports in routes.jsx).
+          manualChunks(id) {
+            if (/node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/.test(id)) {
+              return 'react-vendor';
+            }
+            return undefined;
+          },
+        },
+      },
     },
     test: {
       // Node's fetch needs absolute URLs; MSW intercepts requests to this origin in tests.
@@ -32,6 +45,8 @@ export default defineConfig(({ mode }) => {
       setupFiles: ['./src/test/setup.js'],
       css: false,
       restoreMocks: true,
+      // Every test renders the whole app; under a parallel run on a busy machine 5 s is tight.
+      testTimeout: 15_000,
     },
   };
 });

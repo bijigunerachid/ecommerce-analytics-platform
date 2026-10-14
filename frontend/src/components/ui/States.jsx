@@ -1,24 +1,35 @@
 import { CircleAlert, Inbox, RotateCw } from 'lucide-react';
 import { Button } from './Button.jsx';
-import { Spinner } from './Spinner.jsx';
+import { Skeleton } from './Skeleton.jsx';
 
 /** Placeholder with the panel's final height, so layout doesn't jump when data arrives. */
 export function LoadingState({ label = 'Loading', className = 'h-64' }) {
   return (
-    <div className={`flex items-center justify-center ${className}`}>
-      <Spinner label={label} />
+    <div role="status" aria-label={label} className={`flex flex-col gap-3 p-5 ${className}`}>
+      <Skeleton className="h-4 w-1/3" />
+      <Skeleton className="h-3 w-2/3" />
+      <Skeleton className="w-full flex-1 rounded-lg" />
     </div>
   );
 }
 
-export function EmptyState({ title = 'No data yet', message, className = 'h-64' }) {
+export function EmptyState({
+  title = 'No data yet',
+  message,
+  icon: Icon = Inbox,
+  action,
+  className = 'h-64',
+}) {
   return (
     <div
-      className={`flex flex-col items-center justify-center gap-1.5 px-6 text-center ${className}`}
+      className={`flex flex-col items-center justify-center gap-2 px-6 text-center ${className}`}
     >
-      <Inbox aria-hidden="true" className="size-6 text-ink-muted" />
-      <p className="text-sm font-medium text-ink">{title}</p>
+      <span className="mb-1 flex size-11 items-center justify-center rounded-xl border border-line bg-surface-raised shadow-card">
+        <Icon aria-hidden="true" className="size-5 text-ink-muted" />
+      </span>
+      <p className="text-sm font-semibold text-ink">{title}</p>
       {message && <p className="max-w-sm text-xs text-ink-muted">{message}</p>}
+      {action && <div className="mt-2">{action}</div>}
     </div>
   );
 }
@@ -29,7 +40,9 @@ export function ErrorState({ error, onRetry, className = 'h-64' }) {
       role="alert"
       className={`flex flex-col items-center justify-center gap-2 px-6 text-center ${className}`}
     >
-      <CircleAlert aria-hidden="true" className="size-6 text-status-critical" />
+      <span className="mb-1 flex size-11 items-center justify-center rounded-xl bg-status-critical/10">
+        <CircleAlert aria-hidden="true" className="size-5 text-status-critical" />
+      </span>
       <p className="text-sm font-medium text-ink">Couldn&apos;t load this data</p>
       <p className="max-w-sm text-xs text-ink-muted">{error?.message ?? 'Something went wrong.'}</p>
       {onRetry && (

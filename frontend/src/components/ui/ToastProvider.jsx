@@ -36,7 +36,7 @@ export function ToastProvider({ children }) {
             <div
               key={t.id}
               role="status"
-              className="pointer-events-auto flex items-start gap-2 rounded-lg border border-line bg-surface-raised px-3 py-2.5 text-sm text-ink shadow-lg"
+              className="animate-pop-in pointer-events-auto flex items-start gap-2.5 rounded-xl border border-line bg-surface-raised px-4 py-3 text-sm text-ink shadow-pop"
             >
               <Icon
                 aria-hidden="true"

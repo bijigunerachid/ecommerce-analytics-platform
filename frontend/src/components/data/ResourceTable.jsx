@@ -2,12 +2,20 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Search } fr
 import { useEffect, useState } from 'react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue.js';
 import { formatNumber } from '../../utils/format.js';
+import { pageWindow } from '../../utils/pagination.js';
 import { Button } from '../ui/Button.jsx';
+import { TableSkeleton } from '../ui/Skeleton.jsx';
 import { QueryState } from '../ui/States.jsx';
 
 /** Search box that updates the list after typing pauses. */
 export function SearchInput({ value, onChange, placeholder = 'Search', label = 'Search' }) {
   const [text, setText] = useState(value ?? '');
+  // Follow outside changes to the value (e.g. the command palette navigating with ?search=).
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    setText(value ?? '');
+  }
   const debounced = useDebouncedValue(text, 300);
   useEffect(() => {
     if (debounced !== (value ?? '')) onChange(debounced);
@@ -25,7 +33,7 @@ export function SearchInput({ value, onChange, placeholder = 'Search', label = '
         placeholder={placeholder}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="h-9 w-full rounded-lg border border-line-strong bg-surface-raised pr-3 pl-8 text-sm text-ink placeholder:text-ink-muted"
+        className="h-9 w-full rounded-lg border border-line-strong bg-surface-raised pr-3 pl-8 text-sm text-ink shadow-card transition-[border-color,box-shadow] placeholder:text-ink-muted focus:border-accent focus:ring-3 focus:ring-accent/20 focus:outline-none"
       />
     </div>
   );
@@ -38,7 +46,7 @@ function SortHeader({ column, sort, order, onSort }) {
     <button
       type="button"
       onClick={() => onSort(column.sortKey, column.defaultOrder)}
-      className={`inline-flex items-center gap-1 font-medium hover:text-ink ${active ? 'text-ink' : ''}`}
+      className={`inline-flex items-center gap-1 font-semibold tracking-wide uppercase hover:text-ink ${active ? 'text-ink' : ''}`}
     >
       {column.label}
       <Icon aria-hidden="true" className={`size-3.5 ${active ? '' : 'opacity-40'}`} />
@@ -62,6 +70,9 @@ export function ResourceTable({
   empty,
   onRowClick,
 }) {
+  if (query.isLoading) {
+    return <TableSkeleton columns={Math.min(columns.length, 6)} label={`Loading ${caption}`} />;
+  }
   return (
     <QueryState query={query} isEmpty={(d) => d.data.length === 0} empty={empty} height="h-64">
       {(result) => (
@@ -69,7 +80,7 @@ export function ResourceTable({
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
               <caption className="sr-only">{caption}</caption>
-              <thead className="border-b border-line text-xs text-ink-muted">
+              <thead className="border-b border-line bg-surface-sunken/50 text-[11px] tracking-wide text-ink-muted uppercase">
                 <tr>
                   {columns.map((c) => (
                     <th
@@ -82,7 +93,7 @@ export function ResourceTable({
                             : 'descending'
                           : undefined
                       }
-                      className={`px-4 py-2.5 font-medium whitespace-nowrap ${c.align === 'right' ? 'text-right' : ''}`}
+                      className={`px-4 py-2.5 font-semibold whitespace-nowrap ${c.align === 'right' ? 'text-right' : ''}`}
                     >
                       {c.sortKey ? (
                         <SortHeader column={c} sort={sort} order={order} onSort={onSort} />
@@ -97,13 +108,13 @@ export function ResourceTable({
                 {result.data.map((row) => (
                   <tr
                     key={rowKey(row)}
-                    className={onRowClick ? 'cursor-pointer hover:bg-surface-sunken' : ''}
+                    className={`transition-colors hover:bg-surface-sunken/60 ${onRowClick ? 'cursor-pointer' : ''}`}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                   >
                     {columns.map((c) => (
                       <td
                         key={c.key}
-                        className={`px-4 py-2.5 align-middle text-ink ${c.align === 'right' ? 'text-right tabular' : ''} ${c.className ?? ''}`}
+                        className={`px-4 py-3 align-middle text-ink ${c.align === 'right' ? 'text-right tabular' : ''} ${c.className ?? ''}`}
                       >
                         {c.render ? c.render(row) : row[c.key]}
                       </td>
@@ -128,10 +139,14 @@ export function Pagination({ pagination, onPageChange }) {
   return (
     <nav
       aria-label="Pagination"
-      className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-2.5 text-xs text-ink-secondary"
+      className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-xs text-ink-secondary"
     >
       <p>
-        {formatNumber(first)}–{formatNumber(last)} of {formatNumber(total)}
+        Showing{' '}
+        <span className="font-medium text-ink">
+          {formatNumber(first)}–{formatNumber(last)}
+        </span>{' '}
+        of <span className="font-medium text-ink">{formatNumber(total)}</span>
       </p>
       <div className="flex items-center gap-1">
         <Button
@@ -142,8 +157,32 @@ export function Pagination({ pagination, onPageChange }) {
         >
           <ChevronLeft aria-hidden="true" className="size-4" /> Previous
         </Button>
-        <span className="px-1">
+        <span className="px-1 sm:hidden">
           Page {page} of {Math.max(totalPages, 1)}
+        </span>
+        <span className="hidden items-center gap-1 sm:flex">
+          {pageWindow(page, totalPages).map((p, i) =>
+            p === null ? (
+              <span key={`gap-${i}`} aria-hidden="true" className="px-1 text-ink-muted">
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                type="button"
+                onClick={() => onPageChange(p)}
+                aria-current={p === page ? 'page' : undefined}
+                aria-label={`Page ${p}`}
+                className={`h-8 min-w-8 rounded-lg px-2 text-xs font-medium tabular ${
+                  p === page
+                    ? 'bg-accent text-on-accent shadow-card'
+                    : 'text-ink-secondary hover:bg-surface-sunken hover:text-ink'
+                }`}
+              >
+                {p}
+              </button>
+            ),
+          )}
         </span>
         <Button
           variant="ghost"
@@ -159,12 +198,19 @@ export function Pagination({ pagination, onPageChange }) {
 }
 
 /** Page header with title, description, and primary actions. */
-export function PageHeader({ title, description, actions }) {
+export function PageHeader({ title, description, actions, icon: Icon }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="text-xl font-semibold text-ink">{title}</h1>
-        {description && <p className="text-sm text-ink-secondary">{description}</p>}
+    <header className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex min-w-0 items-center gap-3.5">
+        {Icon && (
+          <span className="hidden size-11 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-raised shadow-card sm:flex">
+            <Icon aria-hidden="true" className="size-5 text-accent" />
+          </span>
+        )}
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
+          {description && <p className="mt-0.5 text-sm text-ink-secondary">{description}</p>}
+        </div>
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </header>
@@ -174,6 +220,8 @@ export function PageHeader({ title, description, actions }) {
 /** Row of filters above a table: search on the left, selects after it. */
 export function FilterBar({ children }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-line p-3">{children}</div>
+    <div className="flex flex-wrap items-center gap-2 border-b border-line p-3 sm:p-4">
+      {children}
+    </div>
   );
 }
