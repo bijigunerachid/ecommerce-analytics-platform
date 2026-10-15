@@ -9,6 +9,20 @@ import { adminApi } from './helpers.js';
  * keyboard flows are covered by the component tests.
  */
 async function expectNoViolations(page, label) {
+  // Pages fade in on navigation. Mid-fade, text is partly transparent and axe measures a
+  // washed-out contrast, so wait for finite animations (not spinners or pulses) to end, at most
+  // one second in case one is paused.
+  await page.evaluate(() =>
+    Promise.race([
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+          .map((a) => a.finished.catch(() => {})),
+      ),
+      new Promise((resolve) => setTimeout(resolve, 1000)),
+    ]),
+  );
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
@@ -38,6 +52,8 @@ test.describe('signed in', () => {
 
   for (const scheme of ['light', 'dark']) {
     test(`main pages in the ${scheme} theme`, async ({ page }) => {
+      // Nine pages, each scanned by axe.
+      test.setTimeout(90_000);
       await page.emulateMedia({ colorScheme: scheme });
       const pages = [
         ['/', page.getByRole('region', { name: 'Net revenue over time' })],

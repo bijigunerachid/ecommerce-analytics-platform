@@ -222,20 +222,13 @@ jobs:
           sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" .env
           sed -i "s/^JWT_SECRET=.*/JWT_SECRET=$(openssl rand -hex 48)/" .env
 
-      - name: Build and start the stack
-        # Spark is covered by the Analytics job; its image is large, so it is not started here.
-        run: docker compose up -d --build --wait web relay
-
-      - name: Create an admin account
-        run: >-
-          docker compose exec -T -e ADMIN_PASSWORD=ci-smoke-admin-password
-          api node scripts/create-admin.js --email ci.admin@example.com --name "CI Admin"
+      # The same test stack developers run locally (scripts/test-stack.mjs). Spark is covered by
+      # the Analytics job; its image is large, so it is not started here.
+      - name: Build and start the test stack, with an admin account
+        run: node scripts/test-stack.mjs up
 
       - name: Run the smoke test through nginx
-        env:
-          SMOKE_ADMIN_EMAIL: ci.admin@example.com
-          SMOKE_ADMIN_PASSWORD: ci-smoke-admin-password
-        run: node scripts/smoke-test.mjs http://localhost:8080
+        run: node scripts/test-stack.mjs smoke
 
       - name: Install the end-to-end tests and Chromium
         working-directory: e2e
@@ -244,12 +237,7 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Run browser end-to-end and accessibility tests
-        working-directory: e2e
-        env:
-          E2E_BASE_URL: http://localhost:8080
-          E2E_ADMIN_EMAIL: ci.admin@example.com
-          E2E_ADMIN_PASSWORD: ci-smoke-admin-password
-        run: npx playwright test
+        run: node scripts/test-stack.mjs e2e
 
       - name: Keep the Playwright report on failure
         if: failure()
@@ -264,9 +252,9 @@ jobs:
       - name: Show container status and logs on failure
         if: failure()
         run: |
-          docker compose ps -a
-          docker compose logs --no-color --tail=100 migrate api relay web
+          node scripts/test-stack.mjs ps
+          node scripts/test-stack.mjs logs
 
-      - name: Stop the stack
+      - name: Remove the test stack
         if: always()
-        run: docker compose down -v
+        run: node scripts/test-stack.mjs down

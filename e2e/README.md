@@ -7,26 +7,39 @@ accessibility checks (axe-core, WCAG 2.2 A/AA) on the main pages in both themes.
 
 ## Running
 
+The tests run against a separate, throwaway copy of the stack (Compose project `ecommerce-e2e`,
+web app on http://localhost:8081), never your development stack, so the records they create
+(`E2E` products, customers, and orders) never reach your data. It runs next to the development
+stack, with its own containers, volumes, and image tags, and reads the same `.env`.
+
 ```powershell
-docker compose up -d --build --wait          # the stack, on http://localhost:8080
-cd e2e
-npm ci
-npx playwright install chromium              # once
-$env:E2E_ADMIN_EMAIL = "you@example.com"     # an existing admin account
-$env:E2E_ADMIN_PASSWORD = "..."
-npx playwright test                          # ~1.5 minutes
-npx playwright test tests/orders.spec.js     # one file
-npx playwright show-report                   # after a failure: traces, screenshots
+cd e2e; npm ci; npx playwright install chromium; cd ..   # once
+
+node scripts/test-stack.mjs            # start the test stack, smoke test, e2e tests, remove it
+node scripts/test-stack.mjs --keep     # same, but keep the stack to rerun or debug
 ```
 
-- The tests create their own records (products, customers, orders with an `E2E` prefix) and an
-  analyst account `e2e.analyst@example.com`, so they run on any database, including your sample
-  data. Run them against a development stack, not real data.
-- Sessions are saved in `e2e/.auth/` and reused while valid. Sign-in is rate limited (10 attempts
-  per 15 minutes per IP by default): if many runs in a row report "Too many sign-in attempts",
-  wait or restart the API (`docker compose restart api`).
-- Settings: `E2E_BASE_URL` (default `http://localhost:8080`), `E2E_ADMIN_EMAIL`,
-  `E2E_ADMIN_PASSWORD`, `E2E_ANALYST_EMAIL`, `E2E_ANALYST_PASSWORD`.
+With the stack kept:
 
-In CI the suite runs in the "Full stack" job on a fresh stack, after the smoke test; on failure
-the Playwright report (with traces) is kept as a build artifact.
+```powershell
+node scripts/test-stack.mjs e2e                        # all browser tests (~1.5 minutes)
+node scripts/test-stack.mjs e2e tests/orders.spec.js   # one file
+node scripts/test-stack.mjs smoke                      # the smoke test
+node scripts/test-stack.mjs logs                       # recent API, relay, and web logs
+node scripts/test-stack.mjs down                       # remove the stack and its volumes
+cd e2e; npx playwright show-report                     # after a failure: traces, screenshots
+```
+
+- The script creates a throwaway admin (`ci.admin@example.com`) in the test stack; the tests
+  create an analyst `e2e.analyst@example.com` there too. If a run fails, the stack is kept so
+  you can look at it.
+- Spark is not started (the tests do not need it); add `--spark` to start it too.
+- Ports: web `E2E_WEB_PORT` (8081); PostgreSQL 55432, Kafka 59092, and the Spark UI 54040 on
+  localhost (`E2E_POSTGRES_PORT`, `E2E_KAFKA_PORT`, `E2E_SPARK_UI_PORT`).
+- To run against another stack, set `E2E_BASE_URL`, `E2E_ADMIN_EMAIL`, and
+  `E2E_ADMIN_PASSWORD` and run `npx playwright test` in `e2e/`. Only point it at a stack
+  whose data you can throw away.
+- Sessions are saved in `e2e/.auth/` and reused while valid.
+
+In CI the "Full stack" job runs the same script on a fresh runner; on failure the Playwright
+report (with traces) is kept as a build artifact.

@@ -81,8 +81,8 @@ docker compose logs -f spark-streaming    # one log line per micro-batch
 | `backend/` | `npm run lint`, `npm run format:check` | |
 | `frontend/` | `npm test`, `npm run lint`, `npm run format:check`, `npm run build` | nothing (API is mocked) |
 | repo root | `docker compose run --rm analytics-tests` | PostgreSQL; `npm run migrate:test` in `backend/` |
-| repo root | `node scripts/smoke-test.mjs` | the full Docker stack running; `SMOKE_ADMIN_EMAIL` / `SMOKE_ADMIN_PASSWORD` set |
-| `e2e/` | `npx playwright test` | the full Docker stack running; `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` set (see [e2e/README.md](../e2e/README.md)) |
+| repo root | `node scripts/test-stack.mjs` | Docker; `npm ci` and Chromium in `e2e/` once. Starts a separate test stack (port 8081), runs the smoke and browser tests, and removes it; your development data is never touched (see [e2e/README.md](../e2e/README.md)) |
+| repo root | `node scripts/smoke-test.mjs <url>` | a running stack and `SMOKE_ADMIN_EMAIL` / `SMOKE_ADMIN_PASSWORD`; it places real orders, so use it on a fresh deployment, not on data you keep |
 
 ## API documentation and metrics
 
