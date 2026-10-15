@@ -1,15 +1,6 @@
-import {
-  Activity,
-  ChartNoAxesCombined,
-  CircleAlert,
-  Eye,
-  EyeOff,
-  Lock,
-  Mail,
-  ShieldCheck,
-  Zap,
-} from 'lucide-react';
+import { Activity, CircleAlert, Eye, EyeOff, Lock, Mail, ShieldCheck, Zap } from 'lucide-react';
 import { useState } from 'react';
+import { BrandMark } from '../components/BrandMark.jsx';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext.js';
 import { Button } from '../components/ui/Button.jsx';
@@ -45,19 +36,17 @@ const HIGHLIGHTS = [
 /** Product introduction beside the form on large screens (descriptive only, no figures). */
 function BrandPanel() {
   return (
-    <aside className="relative hidden overflow-hidden bg-linear-to-br from-[#1e1b4b] via-[#312e81] to-[#4f46e5] p-12 text-white lg:flex lg:flex-col">
+    <aside className="relative hidden overflow-hidden bg-linear-to-br from-[#071a3d] via-[#0b3270] to-[#0b6e8a] p-12 text-white lg:flex lg:flex-col">
       <div
         aria-hidden="true"
         className="absolute -top-32 -right-32 size-96 rounded-full bg-white/10 blur-3xl"
       />
       <div
         aria-hidden="true"
-        className="absolute -bottom-40 -left-24 size-96 rounded-full bg-[#0f0c2e]/60 blur-3xl"
+        className="absolute -bottom-40 -left-24 size-96 rounded-full bg-[#04112a]/60 blur-3xl"
       />
       <div className="relative flex items-center gap-2.5">
-        <span className="flex size-9 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/25">
-          <ChartNoAxesCombined aria-hidden="true" className="size-5" />
-        </span>
+        <BrandMark size="md" />
         <span className="font-semibold">Commerce Analytics</span>
       </div>
       <div className="relative my-auto max-w-md py-12">
@@ -140,9 +129,7 @@ export function LoginPage() {
       <main className="flex items-center justify-center px-4 py-12 sm:px-8">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-accent-fill text-on-accent">
-              <ChartNoAxesCombined aria-hidden="true" className="size-5" />
-            </span>
+            <BrandMark size="md" />
             <span className="font-semibold text-ink">Commerce Analytics</span>
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-ink">Sign in</h1>

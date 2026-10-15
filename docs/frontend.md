@@ -233,6 +233,12 @@ warning if the latest run failed):
 Shared components live in `src/components/ui/`; pages compose them instead of styling raw
 elements, so every screen looks and behaves the same.
 
+- **Brand:** `BrandMark` shows the logo (`src/assets/logo-mark.png`, bundled with a hashed
+  name) on a white tile so its navy and green stay legible on dark surfaces. It is decorative
+  (`alt=""`) because the product name is always written next to it. `public/favicon.png` and
+  `public/apple-touch-icon.png` are cut from the same artwork; the full lockup for the README is
+  `docs/images/logo.png`.
+
 - **Tokens** (`src/index.css`): a neutral zinc scale for surfaces, ink, and lines, one indigo
   accent, and status colors reserved for state. Surfaces: `page`, `surface`, `surface-raised`,
   `surface-sunken`, `surface-hover`, `overlay`. Elevation: `shadow-card`, `shadow-raised`,
