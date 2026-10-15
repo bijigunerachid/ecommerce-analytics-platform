@@ -59,23 +59,23 @@ function useNow(intervalMs = 30_000) {
 export function LiveActivityPanel({ refreshKey }) {
   const titleId = useId();
   const [reload, setReload] = useState(0);
-  const [live, setLive] = useState({ base: null, items: [] });
+  const [pushed, setPushed] = useState([]);
   const now = useNow();
   const query = useApiQuery(
     (signal) => activityApi.recent({ limit: SHOWN }, { signal }),
     [refreshKey, reload],
   );
 
-  useRealtimeEvent('order', (event) =>
-    setLive((current) => ({ base: query.data, items: [event, ...current.items].slice(0, SHOWN) })),
-  );
+  // Pushed events are kept whenever they arrive, even while the list is still loading (the
+  // load may have read the database just before the event's order was committed).
+  useRealtimeEvent('order', (event) => setPushed((current) => [event, ...current].slice(0, SHOWN)));
   useRealtimeEvent('resync', () => setReload((n) => n + 1));
 
-  // Pushed events belong on top of the list they arrived after; a refetch replaces both.
-  const pushed = live.base === query.data ? live.items : [];
+  // Pushed and loaded events merged newest first; an event in both is shown once.
   const seen = new Set();
   const items = [...pushed, ...(query.data?.activity ?? [])]
     .filter((item) => !seen.has(item.eventId) && seen.add(item.eventId))
+    .sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt))
     .slice(0, SHOWN);
 
   return (
@@ -111,8 +111,9 @@ export function LiveActivityPanel({ refreshKey }) {
                       <span className="block text-xs text-ink-muted">
                         <Link
                           to={`/orders/${item.orderId}`}
-                          className="text-accent hover:underline"
+                          className="text-accent underline underline-offset-2"
                         >
+                          {/* Underlined: it sits in a line of text, so color alone is not enough. */}
                           Order #{item.orderId}
                         </Link>{' '}
                         <time dateTime={item.occurredAt}>

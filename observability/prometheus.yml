@@ -1,0 +1,14 @@
+# Prometheus for the Compose stack (profile "observability"). Scrapes the API on the Compose
+# network; the web container does not expose /api/metrics.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: ecommerce-api
+    metrics_path: /api/metrics
+    static_configs:
+      - targets: ["api:4000"]
+    # If you set METRICS_TOKEN for the API, put the same value in this file and uncomment:
+    # authorization:
+    #   credentials_file: /etc/prometheus/metrics-token

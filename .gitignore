@@ -62,3 +62,8 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 *.swp
+
+# Playwright end-to-end test output
+e2e/test-results/
+e2e/playwright-report/
+e2e/.auth/

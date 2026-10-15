@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Accessibility: higher-contrast accent color for links and primary buttons (WCAG AA in both
+  themes), muted text contrast, keyboard access to scrolling tables, underlined inline links.
+- Live activity no longer drops an event that arrives while the list is loading, and the event
+  stream opens only once the server listens for changes.
+- Frontend tests render charts at a fixed size (no more Recharts size warnings).
+
 - Redesigned interface: Inter typography, refined surfaces and elevation, skeleton loading
   states, richer empty and error states, page headers with icons, numbered pagination, and a
   split-screen sign-in page with a password visibility toggle.
@@ -30,6 +36,12 @@ All notable changes to this project are documented here. The format follows
 - Printable invoices (`/orders/:id/invoice`).
 - Customer pages: segment, lifetime value, monthly spend, most-bought products, and orders
   (`GET /api/customers/:id/insights`).
+- Browser end-to-end tests (Playwright) with axe-core accessibility checks in both themes,
+  run in CI on a fresh stack.
+- OpenAPI 3.1 document generated from the request schemas, with Swagger UI at `/api/docs/`
+  and a test that keeps it in sync with the routes.
+- Prometheus metrics (`/api/metrics`) and an optional Prometheus + Grafana setup with a
+  provisioned dashboard (`docker compose --profile observability up -d`).
 - Spark insights job: customer segments (RFM), weekly cohort retention, and a 14-day sales
   forecast with an 80% interval and a measured backtest accuracy; runs every 30 minutes inside
   the streaming job or on demand (`docker compose run --rm spark-insights`). New Insights page

@@ -227,7 +227,6 @@ describe('GET /api/stream', () => {
     expect(stream.res.headers.get('content-type')).toMatch(/^text\/event-stream/);
     expect(stream.res.headers.get('x-accel-buffering')).toBe('no');
     await stream.next('ready');
-    await ctx.app.locals.eventHub.ready();
 
     const order = (await placeOrder(3)).body.order;
     expect(await stream.next('order')).toMatchObject({

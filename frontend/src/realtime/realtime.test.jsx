@@ -121,6 +121,36 @@ describe('notification bell', () => {
 });
 
 describe('live activity', () => {
+  it('keeps an event that arrives while the list is still loading', async () => {
+    let release;
+    const loaded = new Promise((resolve) => (release = resolve));
+    server.use(
+      http.get(`${API}/activity`, async () => {
+        await loaded;
+        // The list was read before the new order was committed, so it does not contain it.
+        return HttpResponse.json(f.activity);
+      }),
+    );
+    renderApp('/');
+    const panel = await screen.findByRole('region', { name: 'Live activity' });
+    const source = await connectedStream();
+    act(() =>
+      source.emit('order', {
+        type: 'order.created',
+        eventId: 'early',
+        occurredAt: new Date().toISOString(),
+        orderId: 99,
+        customerName: 'Early Bird',
+        totalAmount: '10.00',
+      }),
+    );
+    release();
+    const list = await within(panel).findByRole('list', { name: 'Recent order activity' });
+    const items = within(list).getAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent('Early Bird placed an order');
+  });
+
   it('lists recent activity and adds pushed orders on top', async () => {
     renderApp('/');
     const panel = await screen.findByRole('region', { name: 'Live activity' });

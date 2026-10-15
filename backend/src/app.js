@@ -8,6 +8,7 @@ import { createCategoriesController } from './controllers/categories.controller.
 import { createCustomersController } from './controllers/customers.controller.js';
 import { createAuditController } from './controllers/audit.controller.js';
 import { createExportsController } from './controllers/exports.controller.js';
+import { createMetricsController } from './controllers/metrics.controller.js';
 import { createPredictiveController } from './controllers/predictive.controller.js';
 import { createInsightsController } from './controllers/insights.controller.js';
 import { createNotificationsController } from './controllers/notifications.controller.js';
@@ -25,6 +26,8 @@ import { createCategoriesRepository } from './repositories/categories.repository
 import { createCustomersRepository } from './repositories/customers.repository.js';
 import { createExportDefinitions } from './exports/definitions.js';
 import { auditContext } from './middleware/audit.js';
+import { createMetrics } from './observability/metrics.js';
+import { createDocsRouter } from './openapi/docs.routes.js';
 import { createAuditRepository } from './repositories/audit.repository.js';
 import { createInsightsRepository } from './repositories/insights.repository.js';
 import { createPredictiveRepository } from './repositories/predictive.repository.js';
@@ -157,15 +160,19 @@ export function createApp({ db, config }) {
     }),
     maxRows: config.exportMaxRows,
   });
-  const pipelineController = createPipelineController({
-    pipelineService: createPipelineService({ pipelineRepository: createPipelineRepository(db) }),
+  const pipelineService = createPipelineService({
+    pipelineRepository: createPipelineRepository(db),
   });
+  const pipelineController = createPipelineController({ pipelineService });
+  const metrics = createMetrics({ pipelineService, eventHub });
+  const metricsController = createMetricsController({ metrics, token: config.metricsToken });
   const authenticate = requireAuth(authService);
 
   const app = express();
   app.locals.eventHub = eventHub;
   app.disable('x-powered-by');
   app.set('trust proxy', config.trustProxy ?? 0);
+  app.use(metrics.middleware);
   app.use(helmet());
   app.use(
     cors({
@@ -181,6 +188,8 @@ export function createApp({ db, config }) {
   api.use(auditContext(auditRepository));
   api.get('/health', healthController.ready);
   api.get('/health/live', healthController.live);
+  api.get('/metrics', metricsController.scrape);
+  api.use(createDocsRouter({ requireAuth: authenticate }));
   api.use(
     '/auth',
     createAuthRouter({

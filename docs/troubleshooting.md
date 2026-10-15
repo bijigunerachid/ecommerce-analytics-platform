@@ -90,6 +90,14 @@ The browser retries on its own every few seconds. Check `docker compose logs api
 `Event hub` errors (the API could not `LISTEN` on PostgreSQL). Behind another reverse proxy,
 make sure `/api/stream` is not buffered and its read timeout is longer than 25 seconds.
 
+**Grafana shows "No data"**
+Prometheus scrapes `api:4000` every 15 seconds; check http://localhost:9090/targets. If you set
+`METRICS_TOKEN`, give Prometheus the same token (see `observability/prometheus.yml`).
+
+**End-to-end tests fail with "Too many sign-in attempts"**
+That is the sign-in rate limit working (10 attempts per 15 minutes per IP). The tests reuse saved
+sessions, but many runs in a row can still reach it: wait, or `docker compose restart api`.
+
 ## Development
 
 **Backend tests fail with `ECONNREFUSED 127.0.0.1:5432` or Kafka timeouts**

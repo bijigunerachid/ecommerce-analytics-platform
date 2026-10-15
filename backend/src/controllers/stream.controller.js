@@ -15,7 +15,13 @@ const EVENT_NAMES = {
  */
 export function createStreamController({ eventHub, authService, heartbeatMs = HEARTBEAT_MS }) {
   return {
-    stream(req, res) {
+    async stream(req, res) {
+      // Answer only once the hub is listening, so a client that sees the stream open cannot
+      // miss an event committed right after. Subscribing below happens in the same synchronous
+      // step, before any notification can be dispatched. If the database is unreachable the
+      // stream still opens; the client gets "resync" when the hub reconnects.
+      await eventHub.ready();
+      if (req.destroyed) return;
       res.writeHead(200, {
         'Content-Type': 'text/event-stream; charset=utf-8',
         'Cache-Control': 'no-cache, no-transform',

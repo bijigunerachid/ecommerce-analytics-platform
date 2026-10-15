@@ -2,6 +2,7 @@ import { ChartColumn, Table2 } from 'lucide-react';
 import { useId, useState } from 'react';
 import { Card, CardHeader } from '../ui/Card.jsx';
 import { SegmentedControl } from '../ui/SegmentedControl.jsx';
+import { useIsScrollable } from '../../hooks/useIsScrollable.js';
 
 /**
  * A dashboard panel with a chart and an equivalent table. The table view makes every value
@@ -50,8 +51,15 @@ export function ChartFrame({ title, description, chart, table, actions, classNam
 
 /** Compact, accessible data table used by the table views. */
 export function DataTable({ columns, rows, caption, maxHeight = 'max-h-72' }) {
+  // While the table scrolls inside its box, the box can take keyboard focus so it can be
+  // scrolled with the arrow keys; it is named after the table for screen readers.
+  const [ref, scrollable] = useIsScrollable();
   return (
-    <div className={`overflow-auto ${maxHeight}`}>
+    <div
+      ref={ref}
+      className={`overflow-auto ${maxHeight}`}
+      {...(scrollable && { tabIndex: 0, role: 'region', 'aria-label': caption })}
+    >
       <table className="w-full text-left text-xs">
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead className="sticky top-0 bg-surface text-ink-muted">

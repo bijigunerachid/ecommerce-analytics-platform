@@ -6,6 +6,12 @@ All requests and responses use JSON. Authentication uses an **HttpOnly session c
 (`access_token`) set by `POST /auth/login`; browsers send it automatically. From the frontend,
 call the API with `credentials: 'include'`.
 
+## Interactive documentation
+
+Signed-in users can browse and call every endpoint at **`/api/docs/`** (Swagger UI). The
+OpenAPI 3.1 document is at `GET /api/openapi.json`; its parameters and request bodies are
+generated from the validation schemas the API uses.
+
 ## Errors
 
 Every error response has the same shape:
@@ -612,6 +618,24 @@ are still returned).
 Segments are `champions`, `loyal`, `promising`, `needs_attention`, `at_risk`, `hibernating`.
 `GET /customers/:id/insights` also returns `valueSegment: { segment, scores, recencyDays }`
 (`null` before the first run).
+
+## Metrics
+
+### `GET /metrics`
+
+Prometheus text format, for the API's internal network (nginx returns 404 for it). If
+`METRICS_TOKEN` is set, scrapers must send `Authorization: Bearer <token>`.
+
+| Metric | Meaning |
+| --- | --- |
+| `ecommerce_api_http_requests_total{method,route,status}` | Requests per documented route pattern (`/api/orders/:id`, never raw ids); `route="unmatched"` for anything else |
+| `ecommerce_api_http_request_duration_seconds{method,route}` | Latency histogram |
+| `ecommerce_api_event_streams` | Open live event streams |
+| `ecommerce_outbox_pending_events`, `ecommerce_outbox_failing_events`, `ecommerce_outbox_oldest_pending_age_seconds` | Outbox backlog |
+| `ecommerce_pipeline_component_status{component,status}` | 1 for each component's current status (up, degraded, down, unknown) |
+| `ecommerce_pipeline_kafka_lag` | Messages not yet processed by Spark |
+| `ecommerce_pipeline_scrape_ok` | 0 if pipeline state could not be read for this scrape |
+| `ecommerce_api_process_*`, `ecommerce_api_nodejs_*` | Node.js process metrics |
 
 ## Pipeline health
 

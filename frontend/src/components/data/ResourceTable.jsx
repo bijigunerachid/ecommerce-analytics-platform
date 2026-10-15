@@ -227,7 +227,7 @@ export function Pagination({ pagination, onPageChange }) {
                 aria-label={`Page ${p}`}
                 className={`h-8 min-w-8 rounded-lg px-2 text-xs font-medium tabular ${
                   p === page
-                    ? 'bg-accent text-on-accent shadow-card'
+                    ? 'bg-accent-fill text-on-accent shadow-card'
                     : 'text-ink-secondary hover:bg-surface-sunken hover:text-ink'
                 }`}
               >

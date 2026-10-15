@@ -42,6 +42,8 @@ export function loadConfig() {
     // Express take the client IP from X-Forwarded-For, which the login rate limit relies on.
     // Keep 0 when clients connect directly, or they could spoof their IP with that header.
     trustProxy: process.env.TRUST_PROXY ? intFromEnvAllowZero('TRUST_PROXY') : 0,
+    // Optional bearer token for GET /api/metrics (Prometheus).
+    metricsToken: process.env.METRICS_TOKEN || null,
     db: getDatabaseConfig(),
     corsOrigins: (process.env.CORS_ORIGIN || 'http://localhost:5173')
       .split(',')
