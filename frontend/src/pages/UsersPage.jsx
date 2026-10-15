@@ -5,9 +5,10 @@ import { useAuth } from '../auth/AuthContext.js';
 import { DataTable } from '../components/charts/ChartFrame.jsx';
 import { PageHeader } from '../components/data/ResourceTable.jsx';
 import { ActiveBadge, Badge } from '../components/ui/Badge.jsx';
-import { Button } from '../components/ui/Button.jsx';
+import { Button, IconButton } from '../components/ui/Button.jsx';
 import { Card } from '../components/ui/Card.jsx';
-import { CheckboxField, FormError, SelectField, TextField } from '../components/ui/Field.jsx';
+import { SwitchField, FormError, SelectField, TextField } from '../components/ui/Field.jsx';
+import { Drawer } from '../components/ui/Drawer.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
 import { QueryState } from '../components/ui/States.jsx';
 import { useToast } from '../components/ui/toast-context.js';
@@ -41,7 +42,7 @@ function UserForm({ onClose, onSaved }) {
 
   const f = form;
   return (
-    <Modal
+    <Drawer
       open
       title="New staff account"
       description="Share the password with the person securely. They can change it on their account page."
@@ -94,7 +95,7 @@ function UserForm({ onClose, onSaved }) {
           options={ROLE_OPTIONS}
         />
       </form>
-    </Modal>
+    </Drawer>
   );
 }
 
@@ -126,7 +127,7 @@ function EditUserModal({ user, isSelf, onClose, onSaved }) {
 
   const f = form;
   return (
-    <Modal
+    <Drawer
       open
       title={`Edit ${user.email}`}
       onClose={onClose}
@@ -160,7 +161,7 @@ function EditUserModal({ user, isSelf, onClose, onSaved }) {
           disabled={isSelf}
           hint={isSelf ? 'You cannot change your own role.' : undefined}
         />
-        <CheckboxField
+        <SwitchField
           label="Active"
           hint={
             isSelf
@@ -172,7 +173,7 @@ function EditUserModal({ user, isSelf, onClose, onSaved }) {
           disabled={isSelf}
         />
       </form>
-    </Modal>
+    </Drawer>
   );
 }
 
@@ -274,25 +275,19 @@ export function UsersPage() {
                   align: 'right',
                   render: (u) => (
                     <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
+                      <IconButton
+                        label={`Edit ${u.email}`}
+                        icon={Pencil}
                         size="icon-sm"
-                        aria-label={`Edit ${u.email}`}
-                        title="Edit"
                         onClick={() => setEditing(u)}
-                      >
-                        <Pencil aria-hidden="true" className="size-4" />
-                      </Button>
+                      />
                       {u.id !== me.id && (
-                        <Button
-                          variant="ghost"
+                        <IconButton
+                          label={`Reset password for ${u.email}`}
+                          icon={KeyRound}
                           size="icon-sm"
-                          aria-label={`Reset password for ${u.email}`}
-                          title="Reset password"
                           onClick={() => setResetting(u)}
-                        >
-                          <KeyRound aria-hidden="true" className="size-4" />
-                        </Button>
+                        />
                       )}
                     </div>
                   ),

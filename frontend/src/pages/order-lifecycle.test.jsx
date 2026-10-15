@@ -210,7 +210,7 @@ describe('bulk status changes', () => {
       'indeterminate',
       true,
     );
-    await user.selectOptions(screen.getByLabelText('Status'), 'paid');
+    await user.click(screen.getByRole('radio', { name: 'Paid' }));
     await waitFor(() =>
       expect(screen.queryByRole('region', { name: 'Selected orders' })).not.toBeInTheDocument(),
     );

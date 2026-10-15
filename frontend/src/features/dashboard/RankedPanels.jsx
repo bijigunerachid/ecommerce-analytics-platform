@@ -7,6 +7,7 @@ import { QueryState } from '../../components/ui/States.jsx';
 import { NO_DATA_MESSAGE } from './messages.js';
 import { useApiQuery } from '../../hooks/useApiQuery.js';
 import { formatMoney, formatNumber, formatPercent } from '../../utils/format.js';
+import { topWithOther } from './top-with-other.js';
 
 const STATUS_LABELS = {
   pending: 'Pending',
@@ -118,7 +119,7 @@ export function CategoriesPanel({ range, refreshKey }) {
           {(data) => (
             <BarList
               label="Revenue by category"
-              items={data.categories.map((c) => ({
+              items={topWithOther(data.categories).map((c) => ({
                 key: c.categoryId,
                 label: c.name ?? `Category ${c.categoryId}`,
                 value: Number(c.revenue),

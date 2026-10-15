@@ -1,14 +1,15 @@
 import { X } from 'lucide-react';
-import { useEffect, useId, useRef } from 'react';
+import { useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Button } from './Button.jsx';
+import { useDialog } from '../../hooks/useDialog.js';
+import { IconButton } from './Button.jsx';
 
-const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const WIDTHS = { sm: 'sm:max-w-md', md: 'sm:max-w-lg', lg: 'sm:max-w-2xl' };
 
 /**
  * Accessible modal dialog: labelled by its title, focus moves inside on open and returns to
  * the opener on close, Tab stays inside, Escape and the backdrop close it (unless busy).
+ * On phones it opens as a bottom sheet.
  */
 export function Modal({
   open,
@@ -19,59 +20,21 @@ export function Modal({
   footer,
   busy = false,
   size = 'md',
+  icon,
 }) {
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const opener = document.activeElement;
-    const panel = panelRef.current;
-    // Focus the first control of the body (not the header's Close button). Forms inside a
-    // modal must not use autoFocus: React would move focus before `opener` is recorded.
-    const body = panel?.querySelector('[data-modal-body]');
-    (body?.querySelector(FOCUSABLE) ?? panel?.querySelector(FOCUSABLE) ?? panel)?.focus();
-
-    function onKeyDown(e) {
-      if (e.key === 'Escape' && !busy) {
-        e.stopPropagation();
-        onClose();
-      }
-      if (e.key === 'Tab' && panel) {
-        const items = [...panel.querySelectorAll(FOCUSABLE)];
-        if (items.length === 0) return;
-        const [firstItem, lastItem] = [items[0], items[items.length - 1]];
-        if (e.shiftKey && document.activeElement === firstItem) {
-          e.preventDefault();
-          lastItem.focus();
-        } else if (!e.shiftKey && document.activeElement === lastItem) {
-          e.preventDefault();
-          firstItem.focus();
-        }
-      }
-    }
-    document.addEventListener('keydown', onKeyDown);
-    const { overflow } = document.body.style;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = overflow;
-      if (opener instanceof HTMLElement) opener.focus();
-    };
-    // Re-run only when opening/closing; busy/onClose are read fresh via closure on each open.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  const closeFromBackdrop = useDialog(panelRef, { open, onClose, busy });
 
   if (!open) return null;
-  const width = size === 'lg' ? 'max-w-2xl' : size === 'sm' ? 'max-w-md' : 'max-w-lg';
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+        className="animate-fade-in absolute inset-0 bg-overlay backdrop-blur-[2px]"
         aria-hidden="true"
-        onClick={() => !busy && onClose()}
+        onClick={closeFromBackdrop}
       />
       <div
         ref={panelRef}
@@ -80,28 +43,34 @@ export function Modal({
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
-        className={`relative flex max-h-[92dvh] w-full ${width} animate-pop-in flex-col rounded-t-2xl border border-line bg-surface-raised shadow-pop outline-none sm:rounded-2xl`}
+        className={`animate-sheet-up relative flex max-h-[92dvh] w-full ${WIDTHS[size]} flex-col rounded-t-2xl border border-line bg-surface-raised shadow-pop outline-none sm:rounded-xl`}
       >
-        <header className="flex items-start justify-between gap-4 px-6 pt-5 pb-3">
-          <div>
-            <h2 id={titleId} className="text-lg font-semibold tracking-tight text-ink">
+        <header className="flex items-start gap-3 px-5 pt-5 pb-2 sm:px-6">
+          {icon}
+          <div className="min-w-0 flex-1">
+            <h2 id={titleId} className="text-base font-semibold text-ink">
               {title}
             </h2>
             {description && (
-              <p id={descriptionId} className="mt-0.5 text-sm text-ink-secondary">
+              <p id={descriptionId} className="mt-1 text-sm text-ink-secondary">
                 {description}
               </p>
             )}
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} disabled={busy} aria-label="Close">
-            <X aria-hidden="true" className="size-4" />
-          </Button>
+          <IconButton
+            label="Close"
+            icon={X}
+            size="icon-sm"
+            onClick={onClose}
+            disabled={busy}
+            className="-mt-1 -mr-2"
+          />
         </header>
-        <div data-modal-body className="overflow-y-auto px-6 py-3">
+        <div data-modal-body className="overflow-y-auto px-5 py-3 sm:px-6">
           {children}
         </div>
         {footer && (
-          <footer className="mt-2 flex flex-wrap justify-end gap-2 rounded-b-2xl border-t border-line bg-surface px-6 py-3.5">
+          <footer className="mt-2 flex flex-col-reverse gap-2 rounded-b-xl border-t border-line bg-surface-sunken/60 px-5 py-3.5 sm:flex-row sm:justify-end sm:px-6">
             {footer}
           </footer>
         )}

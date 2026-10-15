@@ -2,10 +2,20 @@ import { CreditCard, Truck } from 'lucide-react';
 import { ORDER_STATUS_LABELS } from '../../utils/labels.js';
 import { StatusBadge } from './StatusBadge.jsx';
 
-/** Neutral pill for non-status labels (category, role, reason). */
-export function Badge({ children }) {
+const BADGE_TONES = {
+  neutral: 'border-line bg-surface-sunken text-ink-secondary',
+  accent: 'border-accent/25 bg-accent-soft text-ink',
+};
+
+/**
+ * Pill for non-status labels (category, role, reason, segment). State uses StatusBadge
+ * instead, which always pairs its color with an icon.
+ */
+export function Badge({ children, tone = 'neutral' }) {
   return (
-    <span className="inline-flex items-center whitespace-nowrap rounded-full bg-surface-sunken px-2 py-0.5 text-xs font-medium text-ink-secondary">
+    <span
+      className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-xs font-medium whitespace-nowrap ${BADGE_TONES[tone]}`}
+    >
       {children}
     </span>
   );

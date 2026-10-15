@@ -215,8 +215,8 @@ warning if the latest run failed):
   - No chart uses two y-axes.
 - **Every chart has a table view** (the chart/table toggle), so values are readable without
   hovering and without relying on color.
-- **Dialogs:** labelled, focus moves to the first field, Tab stays inside, Escape closes, and
-  focus returns to the button that opened them. The pickers follow the combobox pattern
+- **Dialogs and drawers:** labelled, focus moves to the first field, Tab stays inside, Escape
+  closes the topmost one, and focus returns to the button that opened them. The pickers follow the combobox pattern
   (arrow keys, Enter, Escape).
 - **Tables:** sortable headers announce their state with `aria-sort`; on small screens a table
   scrolls inside its card instead of widening the page.
@@ -227,6 +227,42 @@ warning if the latest run failed):
   - Status changes are announced with `role="alert"`.
 - **Responsive:** single column on phones (no horizontal scroll at 390px), sidebar drawer below
   1024px.
+
+## Design system
+
+Shared components live in `src/components/ui/`; pages compose them instead of styling raw
+elements, so every screen looks and behaves the same.
+
+- **Tokens** (`src/index.css`): a neutral zinc scale for surfaces, ink, and lines, one indigo
+  accent, and status colors reserved for state. Surfaces: `page`, `surface`, `surface-raised`,
+  `surface-sunken`, `surface-hover`, `overlay`. Elevation: `shadow-card`, `shadow-raised`,
+  `shadow-pop`. Each token is defined for both themes; text pairs meet WCAG AA, which the
+  axe checks in `e2e/` verify in light and dark.
+- **Motion:** short fade and slide classes (`animate-fade-in`, `animate-page-in`,
+  `animate-sheet-up`, `animate-drawer-in`, `animate-drawer-in-left`, `animate-toast-in`).
+  Under `prefers-reduced-motion` they show content without movement.
+- **Buttons** (`Button.jsx`, `button-styles.js`): variants `primary`, `secondary`, `ghost`,
+  `danger`, `danger-ghost`, `subtle-danger`; a `loading` prop shows a spinner and blocks
+  repeat clicks. `IconButton` requires a `label`, which becomes both its accessible name and
+  its tooltip.
+- **Tooltip:** appears after a short hover delay or immediately on keyboard focus; Escape hides
+  it. Only for hints that repeat a visible or accessible name, never for essential content.
+- **Modal vs Drawer:** both use `useDialog` (focus trap, Escape closes only the topmost
+  dialog, scroll lock, focus restore). Create and edit forms open in a **Drawer** from the
+  right, so the list stays visible; short confirmations and single-purpose prompts (reset
+  password, `ConfirmDialog`) use a centered **Modal**, which becomes a bottom sheet on phones.
+- **Forms** (`Field.jsx`): `TextField` (with `prefix`/`suffix`, e.g. the currency symbol on
+  prices), `SelectField`, `TextAreaField`, `SwitchField` (`role="switch"` for on/off
+  settings), and `FormSection`. Errors show an icon and are linked with `aria-describedby`.
+- **Filtering:** `FilterTabs` for a small set of exclusive values (order status), and
+  `FilterSelect`/date inputs in a `FilterBar`, which offers "Clear filters" whenever a
+  filter is active. Tabs and `SegmentedControl` are radio groups: one Tab stop, arrow keys
+  move the selection.
+- **Toasts:** success, info, warning, and error, with an optional description and action
+  button. They pause while hovered or focused, and at most three are shown.
+- **Dashboard** groups its panels into Sales, Products and customers, and Operations sections.
+  Long category lists show the top seven and fold the rest into "Other" (the table view still
+  lists every category).
 
 ## Configuration
 
