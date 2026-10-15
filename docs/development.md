@@ -82,6 +82,18 @@ docker compose logs -f spark-streaming    # one log line per micro-batch
 | `frontend/` | `npm test`, `npm run lint`, `npm run format:check`, `npm run build` | nothing (API is mocked) |
 | repo root | `docker compose run --rm analytics-tests` | PostgreSQL; `npm run migrate:test` in `backend/` |
 | repo root | `node scripts/smoke-test.mjs` | the full Docker stack running; `SMOKE_ADMIN_EMAIL` / `SMOKE_ADMIN_PASSWORD` set |
+| `e2e/` | `npx playwright test` | the full Docker stack running; `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` set (see [e2e/README.md](../e2e/README.md)) |
+
+## API documentation and metrics
+
+- **Swagger UI:** sign in, then open http://localhost:8080/api/docs/ (or :5173 in development).
+  "Try it out" uses your session. The document itself is `GET /api/openapi.json`; it is built
+  from the Zod request schemas in `backend/src/openapi/spec.js`. A test fails if a route is added
+  without being documented there (or documented without existing).
+- **Metrics:** `GET /api/metrics` (Prometheus format) on the API. nginx does not expose it.
+  `docker compose --profile observability up -d` adds Prometheus (http://localhost:9090) and
+  Grafana (http://localhost:3000, user `admin`, password `GRAFANA_ADMIN_PASSWORD`) with the
+  "Commerce Analytics: API and pipeline" dashboard.
 
 ## Backend commands (`backend/`)
 

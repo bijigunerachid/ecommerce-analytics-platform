@@ -203,9 +203,9 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
   stack:
-    name: Full stack (Docker Compose smoke test)
+    name: Full stack (smoke and browser end-to-end tests)
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
 
     steps:
       - name: Check out code
@@ -236,6 +236,30 @@ jobs:
           SMOKE_ADMIN_EMAIL: ci.admin@example.com
           SMOKE_ADMIN_PASSWORD: ci-smoke-admin-password
         run: node scripts/smoke-test.mjs http://localhost:8080
+
+      - name: Install the end-to-end tests and Chromium
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run browser end-to-end and accessibility tests
+        working-directory: e2e
+        env:
+          E2E_BASE_URL: http://localhost:8080
+          E2E_ADMIN_EMAIL: ci.admin@example.com
+          E2E_ADMIN_PASSWORD: ci-smoke-admin-password
+        run: npx playwright test
+
+      - name: Keep the Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7
 
       - name: Show container status and logs on failure
         if: failure()

@@ -55,7 +55,7 @@ export function OrderProgress({ status, history, createdAt }) {
                 step.status === 'cancelled'
                   ? 'bg-status-critical text-white'
                   : done
-                    ? 'bg-accent text-on-accent'
+                    ? 'bg-accent-fill text-on-accent'
                     : current
                       ? 'bg-surface-raised text-accent ring-2 ring-accent'
                       : 'bg-surface-sunken text-ink-muted ring-1 ring-line'

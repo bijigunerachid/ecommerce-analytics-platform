@@ -19,12 +19,16 @@
   --surface-sunken: #f0efec;
   --ink: #0b0b0b;
   --ink-secondary: #52514e;
-  --ink-muted: #6f6d68;
+  --ink-muted: #6a6863;
   --line: #e1e0d9;
   --line-strong: #c3c2b7;
-  --accent: #2a78d6;
-  --accent-strong: #1c5cab;
+  /* UI accent (links, focus, primary buttons), darker than chart series 1 for text contrast:
+     accent on the page 4.9:1, white on accent-fill 5.2:1 (WCAG AA is 4.5:1). */
+  --accent: #1d6ccb;
+  --accent-strong: #17589f;
   --accent-soft: #cde2fb;
+  --accent-fill: #1d6ccb;
+  --accent-fill-hover: #17589f;
   --on-accent: #ffffff;
 
   --series-1: #2a78d6;
@@ -55,9 +59,11 @@
   --ink-muted: #9b998f;
   --line: #2c2c2a;
   --line-strong: #383835;
-  --accent: #3987e5;
-  --accent-strong: #6da7ec;
+  --accent: #5a9cec;
+  --accent-strong: #84b6f1;
   --accent-soft: #184f95;
+  --accent-fill: #2563c4;
+  --accent-fill-hover: #2f6fd3;
   --on-accent: #ffffff;
 
   --series-1: #3987e5;
@@ -90,6 +96,8 @@
   --color-accent: var(--accent);
   --color-accent-strong: var(--accent-strong);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-fill: var(--accent-fill);
+  --color-accent-fill-hover: var(--accent-fill-hover);
   --color-on-accent: var(--on-accent);
   --color-series-1: var(--series-1);
   --color-series-2: var(--series-2);
@@ -131,7 +139,7 @@
     --surface-sunken: #f0efec;
     --ink: #0b0b0b;
     --ink-secondary: #52514e;
-    --ink-muted: #6f6d68;
+    --ink-muted: #6a6863;
     --line: #e1e0d9;
     --line-strong: #c3c2b7;
   }

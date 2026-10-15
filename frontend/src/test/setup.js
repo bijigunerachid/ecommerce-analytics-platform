@@ -1,8 +1,21 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup, configure } from '@testing-library/react';
-import { afterAll, afterEach, beforeAll } from 'vitest';
+import { cloneElement, createElement } from 'react';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { FakeEventSource } from './fake-event-source.js';
 import { server } from './server.js';
+
+// jsdom does no layout, so ResponsiveContainer measures 0×0: charts would not render (and
+// Recharts warns on every one). Give charts a fixed size so tests render real SVG.
+vi.mock('recharts', async (importOriginal) => {
+  const recharts = await importOriginal();
+  const CHART_SIZE = { width: 800, height: 300 };
+  return {
+    ...recharts,
+    ResponsiveContainer: ({ children }) =>
+      createElement('div', { style: CHART_SIZE }, cloneElement(children, CHART_SIZE)),
+  };
+});
 
 window.EventSource = FakeEventSource;
 

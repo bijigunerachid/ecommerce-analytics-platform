@@ -94,6 +94,7 @@ services:
       CORS_ORIGIN: ${WEB_ORIGIN:-http://localhost:8080}
       # One proxy (the web container's nginx) sits in front of the API.
       TRUST_PROXY: 1
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
       LOGIN_RATE_LIMIT_MAX: ${LOGIN_RATE_LIMIT_MAX:-10}
       LOGIN_RATE_LIMIT_WINDOW_MINUTES: ${LOGIN_RATE_LIMIT_WINDOW_MINUTES:-15}
       KAFKA_BROKERS: kafka:29092
@@ -221,7 +222,52 @@ services:
       - ./analytics:/app
     command: ["sh", "-c", "ruff check --no-cache . && ruff format --no-cache --check . && pytest -p no:cacheprovider"]
 
+  # ---- Monitoring (optional) -------------------------------------------------------------
+  # Prometheus scrapes the API's /api/metrics on the Compose network; Grafana shows the
+  # provisioned "Commerce Analytics: API and pipeline" dashboard.
+  #   docker compose --profile observability up -d
+  #   Grafana: http://localhost:3000 (admin / GRAFANA_ADMIN_PASSWORD), Prometheus: http://localhost:9090
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    container_name: ecommerce-prometheus
+    profiles: [observability]
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+
+  grafana:
+    image: grafana/grafana:13.2.3
+    container_name: ecommerce-grafana
+    profiles: [observability]
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me-grafana}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/api.json
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+
 volumes:
+  prometheus-data:
+  grafana-data:
   postgres-data:
   kafka-data:
   analytics-data:

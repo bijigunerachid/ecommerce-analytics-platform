@@ -1,0 +1,18 @@
+{
+  "name": "ecommerce-analytics-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser end-to-end tests against the running Docker stack (through nginx).",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "install-browser": "playwright install --with-deps chromium"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0"
+  }
+}

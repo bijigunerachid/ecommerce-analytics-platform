@@ -1,6 +1,6 @@
 const VARIANTS = {
   primary:
-    'bg-accent text-on-accent shadow-card hover:bg-accent-strong active:translate-y-px disabled:opacity-60 dark:hover:bg-accent/85',
+    'bg-accent-fill text-on-accent shadow-card hover:bg-accent-fill-hover active:translate-y-px disabled:opacity-60',
   secondary:
     'border border-line-strong bg-surface-raised text-ink shadow-card hover:bg-surface-sunken active:translate-y-px disabled:opacity-60',
   ghost: 'text-ink-secondary hover:bg-surface-sunken hover:text-ink disabled:opacity-60',

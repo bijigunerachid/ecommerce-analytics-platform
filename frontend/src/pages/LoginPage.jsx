@@ -140,7 +140,7 @@ export function LoginPage() {
       <main className="flex items-center justify-center px-4 py-12 sm:px-8">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-on-accent">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-accent-fill text-on-accent">
               <ChartNoAxesCombined aria-hidden="true" className="size-5" />
             </span>
             <span className="font-semibold text-ink">Commerce Analytics</span>

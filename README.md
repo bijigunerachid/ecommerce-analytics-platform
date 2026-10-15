@@ -86,12 +86,17 @@ Something not working? See [docs/troubleshooting.md](docs/troubleshooting.md).
 
 | Area | What you can do |
 | --- | --- |
-| Dashboard | Net revenue, orders, average order value, cancellations, new customers (vs the previous period); revenue over time; best sellers and categories; order status; new vs returning customers; inventory watchlist; anomalies; pipeline health |
-| Orders | Search and filter; place orders with customer and product pickers; status lifecycle (pending → paid → shipped → delivered, or cancelled with automatic restock) |
-| Catalog | Products and categories with prices, stock levels, low-stock flags; create, edit, deactivate |
-| Customers | Order history and spending per customer |
-| Inventory | Full stock ledger (orders, cancellations, restocks, adjustments) and stock adjustments |
-| Users | Admins create admin or analyst accounts; analysts have read-only access |
+| Dashboard | KPIs vs the previous period with trend lines; revenue over time; best sellers and categories; order status; new vs returning customers; inventory watchlist; anomalies; pipeline health; live activity feed and a "Live" auto-refresh |
+| Insights | 14-day sales forecast with an 80% range and backtest accuracy; customer segments (RFM) with their customers; weekly repeat-purchase cohorts (computed by Spark) |
+| Reports | Printable sales report for any period; CSV / Excel exports of every list with the filters on screen |
+| Orders | Search, filter, bulk status changes; place orders with pickers; lifecycle with a progress tracker, status history with notes, staff notes, printable invoices |
+| Catalog | Products and categories; product pages with daily sales, stock history from the ledger, days of stock left, and one-click restock |
+| Customers | Customer pages with lifetime value, segment, monthly spend, most-bought products, and orders |
+| Inventory | Full stock ledger (orders, cancellations, restocks, adjustments) and idempotent adjustments |
+| Notifications | Bell with low-stock, out-of-stock, and anomaly alerts, pushed live (Server-Sent Events) |
+| Account and security | Profile and password change, sign out other sessions, user administration with last-admin protection, append-only audit log |
+| Productivity | Command palette (Ctrl+K) to find pages and records, keyboard shortcuts, light/dark themes |
+| Developer and operations | OpenAPI document and Swagger UI at `/api/docs`, Prometheus metrics, optional Prometheus + Grafana dashboard |
 
 More screenshots (dark mode, mobile, orders, inventory, forms) are in
 [docs/frontend.md](docs/frontend.md).
@@ -122,8 +127,8 @@ design, with a sequence diagram of an order and the list of guarantees, is in
 | Backend | Node.js 22, Express 5, Zod 4, PostgreSQL 17 (`pg`), JWT + bcrypt, node-pg-migrate |
 | Streaming | Apache Kafka 4.2 (KRaft), Confluent Kafka client (librdkafka) |
 | Analytics | Apache Spark 4.1 Structured Streaming (PySpark), Parquet, psycopg 3 |
-| Infrastructure | Docker Compose, nginx, GitHub Actions |
-| Testing | Vitest, Supertest, Testing Library, MSW, pytest, Playwright (screenshots) |
+| Infrastructure | Docker Compose, nginx, GitHub Actions, Prometheus, Grafana |
+| Testing | Vitest, Supertest, Testing Library, MSW, pytest, Playwright with axe-core (end-to-end and accessibility) |
 
 ## Repository layout
 
@@ -135,6 +140,8 @@ design, with a sequence diagram of an order and the list of guarantees, is in
 | `data/samples/` | Synthetic product catalog for the sample data generator |
 | `docs/` | Architecture, API, events, database, analytics, frontend, development, troubleshooting |
 | `scripts/` | Environment check and full-stack smoke test |
+| `e2e/` | Playwright browser end-to-end and accessibility tests |
+| `observability/` | Prometheus scrape config and the provisioned Grafana dashboard |
 | `.github/workflows/` | CI |
 
 ## Documentation
@@ -159,6 +166,7 @@ design, with a sequence diagram of an order and the list of guarantees, is in
 | Analytics (Spark jobs) | `docker compose run --rm analytics-tests` | ✓ inside the Spark image |
 | Frontend (components, pages, flows) | `cd frontend; npm test` | ✓ plus a production build |
 | Full stack (through nginx) | `node scripts/smoke-test.mjs` | ✓ on a fresh Docker Compose stack |
+| Browser end-to-end and accessibility | `cd e2e; npx playwright test` | ✓ on the same fresh stack |
 
 Details and single-test commands are in [docs/development.md](docs/development.md).
 

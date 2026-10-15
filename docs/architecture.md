@@ -139,6 +139,15 @@ contracts and delivery), [analytics.md](analytics.md) (Spark pipeline), [api.md]
 
 ## Health and observability
 
+- **Metrics:** the API exposes Prometheus metrics (requests and latency per route, live streams,
+  outbox backlog, pipeline component status, Kafka lag). `docker compose --profile observability`
+  adds Prometheus and a provisioned Grafana dashboard. See [api.md](api.md#metrics).
+- **API documentation:** OpenAPI 3.1 generated from the request schemas, with Swagger UI at
+  `/api/docs/`; a test keeps it in sync with the routes the app serves.
+- **End-to-end tests:** Playwright drives the real stack through nginx in CI, including axe-core
+  accessibility checks in both themes ([e2e/README.md](../e2e/README.md)).
+
+
 - `GET /api/health`: API and database (`/api/health/live` for the process only)
 - `GET /api/pipeline/health`: outbox backlog, oldest pending event, failures, relay and Spark
   heartbeats, Kafka consumer lag. Shown on the dashboard.
