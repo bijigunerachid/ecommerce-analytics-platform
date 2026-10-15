@@ -3,7 +3,7 @@ import { inventoryApi, productsApi } from '../../api/endpoints.js';
 import { EntityPicker } from '../../components/data/EntityPicker.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { FormError, SelectField, TextField } from '../../components/ui/Field.jsx';
-import { Modal } from '../../components/ui/Modal.jsx';
+import { Drawer } from '../../components/ui/Drawer.jsx';
 import { useToast } from '../../components/ui/toast-context.js';
 import { useForm } from '../../hooks/useForm.js';
 import { formatNumber } from '../../utils/format.js';
@@ -58,7 +58,7 @@ export function AdjustStockModal({ onClose, onSaved, product = null, quantity = 
 
   const f = form;
   return (
-    <Modal
+    <Drawer
       open
       title="Adjust stock"
       description="Every change is recorded in the inventory ledger."
@@ -116,6 +116,6 @@ export function AdjustStockModal({ onClose, onSaved, product = null, quantity = 
           placeholder="Optional, e.g. supplier delivery #123"
         />
       </form>
-    </Modal>
+    </Drawer>
   );
 }

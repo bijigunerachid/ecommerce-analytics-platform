@@ -1,4 +1,13 @@
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  FilterX,
+  Search,
+  X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue.js';
 import { formatNumber } from '../../utils/format.js';
@@ -25,7 +34,7 @@ export function SearchInput({ value, onChange, placeholder = 'Search', label = '
     <div className="relative w-full min-w-0 sm:w-auto sm:max-w-xs sm:flex-1">
       <Search
         aria-hidden="true"
-        className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-ink-muted"
+        className="pointer-events-none absolute top-2 left-2.5 size-4 text-ink-muted"
       />
       <input
         type="search"
@@ -33,8 +42,21 @@ export function SearchInput({ value, onChange, placeholder = 'Search', label = '
         placeholder={placeholder}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="h-9 w-full rounded-lg border border-line-strong bg-surface-raised pr-3 pl-8 text-sm text-ink shadow-card transition-[border-color,box-shadow] placeholder:text-ink-muted focus:border-accent focus:ring-3 focus:ring-accent/20 focus:outline-none"
+        className="h-8 w-full rounded-lg border border-line-strong bg-surface-raised pr-8 pl-8 text-[13px] text-ink shadow-card transition-[border-color,box-shadow] placeholder:text-ink-muted hover:border-ink-muted/50 focus:border-accent focus:ring-3 focus:ring-accent/20 focus:outline-none [&::-webkit-search-cancel-button]:appearance-none"
       />
+      {text && (
+        <button
+          type="button"
+          onClick={() => {
+            setText('');
+            onChange('');
+          }}
+          aria-label="Clear search"
+          className="absolute top-1.5 right-1.5 rounded p-0.5 text-ink-muted hover:bg-surface-hover hover:text-ink"
+        >
+          <X aria-hidden="true" className="size-3.5" />
+        </button>
+      )}
     </div>
   );
 }
@@ -104,9 +126,9 @@ export function ResourceTable({
       {(result) => (
         <div aria-busy={query.isFetching}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
+            <table className="w-full min-w-[640px] text-left text-[13px]">
               <caption className="sr-only">{caption}</caption>
-              <thead className="border-b border-line bg-surface-sunken/50 text-xs text-ink-muted">
+              <thead className="border-b border-line bg-surface-sunken/60 text-xs text-ink-muted">
                 <tr>
                   {selection && (
                     <th scope="col" className="w-10 py-2.5 pr-0 pl-4">
@@ -124,7 +146,7 @@ export function ResourceTable({
                             : 'descending'
                           : undefined
                       }
-                      className={`px-4 py-2.5 font-medium whitespace-nowrap ${c.align === 'right' ? 'text-right' : ''}`}
+                      className={`h-9 px-4 font-medium whitespace-nowrap ${c.align === 'right' ? 'text-right' : ''}`}
                     >
                       {c.sortKey ? (
                         <SortHeader column={c} sort={sort} order={order} onSort={onSort} />
@@ -139,7 +161,7 @@ export function ResourceTable({
                 {result.data.map((row) => (
                   <tr
                     key={rowKey(row)}
-                    className={`transition-colors hover:bg-surface-sunken/60 ${onRowClick ? 'cursor-pointer' : ''} ${
+                    className={`transition-colors hover:bg-surface-hover/70 ${onRowClick ? 'cursor-pointer' : ''} ${
                       selection?.selected.includes(rowKey(row))
                         ? 'bg-accent-soft/25 dark:bg-accent-soft/30'
                         : ''
@@ -166,7 +188,7 @@ export function ResourceTable({
                     {columns.map((c) => (
                       <td
                         key={c.key}
-                        className={`px-4 py-3 align-middle text-ink ${c.align === 'right' ? 'text-right tabular' : ''} ${c.className ?? ''}`}
+                        className={`px-4 py-2.5 align-middle text-ink ${c.align === 'right' ? 'text-right tabular' : ''} ${c.className ?? ''}`}
                       >
                         {c.render ? c.render(row) : row[c.key]}
                       </td>
@@ -191,7 +213,7 @@ export function Pagination({ pagination, onPageChange }) {
   return (
     <nav
       aria-label="Pagination"
-      className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-xs text-ink-secondary"
+      className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-2.5 text-xs text-ink-secondary"
     >
       <p>
         Showing{' '}
@@ -250,19 +272,13 @@ export function Pagination({ pagination, onPageChange }) {
 }
 
 /** Page header with title, description, and primary actions. */
-export function PageHeader({ title, description, actions, icon: Icon }) {
+export function PageHeader({ title, description, actions, meta }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-4">
-      <div className="flex min-w-0 items-center gap-3.5">
-        {Icon && (
-          <span className="hidden size-11 shrink-0 items-center justify-center rounded-xl border border-line bg-surface-raised shadow-card sm:flex">
-            <Icon aria-hidden="true" className="size-5 text-accent" />
-          </span>
-        )}
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
-          {description && <p className="mt-0.5 text-sm text-ink-secondary">{description}</p>}
-        </div>
+    <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+      <div className="min-w-0">
+        <h1 className="text-[22px] leading-tight font-semibold text-ink">{title}</h1>
+        {description && <p className="mt-1 text-sm text-ink-secondary">{description}</p>}
+        {meta && <div className="mt-2 flex flex-wrap items-center gap-2">{meta}</div>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </header>
@@ -270,10 +286,21 @@ export function PageHeader({ title, description, actions, icon: Icon }) {
 }
 
 /** Row of filters above a table: search on the left, selects after it. */
-export function FilterBar({ children }) {
+export function FilterBar({ children, onClear, activeCount = 0 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-line p-3 sm:p-4">
+    <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2.5 sm:px-4">
       {children}
+      {onClear && activeCount > 0 && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium text-ink-secondary hover:bg-surface-hover hover:text-ink"
+        >
+          <FilterX aria-hidden="true" className="size-3.5" />
+          Clear filters
+          <span className="sr-only">({activeCount} active)</span>
+        </button>
+      )}
     </div>
   );
 }

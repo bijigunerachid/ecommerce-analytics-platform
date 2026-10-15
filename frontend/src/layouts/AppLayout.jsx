@@ -19,10 +19,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext.js';
 import { Avatar } from '../components/ui/Avatar.jsx';
-import { Button } from '../components/ui/Button.jsx';
+import { Button, IconButton } from '../components/ui/Button.jsx';
 import { Kbd } from '../components/ui/Kbd.jsx';
 import { modKeyLabel } from '../utils/platform.js';
 import { Menu } from '../components/ui/Menu.jsx';
+import { Tooltip } from '../components/ui/Tooltip.jsx';
 import { CommandPalette } from '../features/command/CommandPalette.jsx';
 import { ShortcutsDialog } from '../features/command/ShortcutsDialog.jsx';
 import { useGlobalShortcuts } from '../features/command/useGlobalShortcuts.js';
@@ -45,15 +46,17 @@ function Brand({ collapsed = false }) {
   return (
     <Link
       to="/"
-      className="flex items-center gap-2.5 rounded-lg px-1.5 py-1"
+      className="flex min-w-0 items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-surface-hover"
       aria-label="Commerce Analytics, go to dashboard"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-accent to-accent-strong text-on-accent shadow-card">
-        <ChartNoAxesCombined aria-hidden="true" className="size-4.5" />
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-accent-fill to-accent-strong text-on-accent shadow-raised">
+        <ChartNoAxesCombined aria-hidden="true" className="size-4" />
       </span>
       {!collapsed && (
         <span className="min-w-0 leading-tight">
-          <span className="block truncate text-sm font-semibold text-ink">Commerce Analytics</span>
+          <span className="block truncate text-[13px] font-semibold text-ink">
+            Commerce Analytics
+          </span>
           <span className="block text-[11px] text-ink-muted">Operations & insights</span>
         </span>
       )}
@@ -64,48 +67,43 @@ function Brand({ collapsed = false }) {
 function Navigation({ collapsed, onNavigate }) {
   const { user } = useAuth();
   return (
-    <nav aria-label="Main" className="space-y-5">
+    <nav aria-label="Main" className="space-y-4">
       {visibleNavGroups(user?.role).map((group) => (
         <div key={group.label}>
           {collapsed ? (
             <div aria-hidden="true" className="mx-3 mb-2 h-px bg-line first:hidden" />
           ) : (
-            <p className="mb-1.5 px-3 text-xs font-medium text-ink-muted">{group.label}</p>
+            <p className="mb-1 px-2.5 text-[11px] font-medium text-ink-muted">{group.label}</p>
           )}
           <ul className="space-y-0.5">
             {group.items.map(({ to, label, icon: Icon, end }) => (
               <li key={to}>
-                <NavLink
-                  to={to}
-                  end={end}
-                  onClick={onNavigate}
-                  title={collapsed ? label : undefined}
-                  className={({ isActive }) =>
-                    `group relative flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors ${
-                      collapsed ? 'justify-center px-2' : 'px-3'
-                    } ${
-                      isActive
-                        ? 'bg-surface-raised text-ink shadow-card ring-1 ring-line'
-                        : 'text-ink-secondary hover:bg-surface-sunken hover:text-ink'
-                    }`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && (
-                        <span
+                <Tooltip content={collapsed ? label : null} side="right" className="flex">
+                  <NavLink
+                    to={to}
+                    end={end}
+                    onClick={onNavigate}
+                    className={({ isActive }) =>
+                      `group relative flex h-8 w-full items-center gap-2.5 rounded-md text-[13px] font-medium transition-colors ${
+                        collapsed ? 'justify-center px-2' : 'px-2.5'
+                      } ${
+                        isActive
+                          ? 'bg-surface-raised text-ink shadow-card ring-1 ring-line'
+                          : 'text-ink-secondary hover:bg-surface-hover hover:text-ink'
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <Icon
                           aria-hidden="true"
-                          className="absolute top-1/2 -left-3 h-5 w-1 -translate-y-1/2 rounded-r-full bg-accent"
+                          className={`size-4 shrink-0 ${isActive ? 'text-accent' : ''}`}
                         />
-                      )}
-                      <Icon
-                        aria-hidden="true"
-                        className={`size-4 shrink-0 ${isActive ? 'text-accent' : ''}`}
-                      />
-                      <span className={collapsed ? 'sr-only' : 'truncate'}>{label}</span>
-                    </>
-                  )}
-                </NavLink>
+                        <span className={collapsed ? 'sr-only' : 'truncate'}>{label}</span>
+                      </>
+                    )}
+                  </NavLink>
+                </Tooltip>
               </li>
             ))}
           </ul>
@@ -118,10 +116,10 @@ function Navigation({ collapsed, onNavigate }) {
 function SidebarContent({ collapsed = false, onNavigate, onToggleCollapsed }) {
   return (
     <div className="flex h-full flex-col">
-      <div className={`flex h-16 items-center ${collapsed ? 'justify-center px-2' : 'px-4'}`}>
+      <div className={`flex h-14 items-center ${collapsed ? 'justify-center px-2' : 'px-3'}`}>
         <Brand collapsed={collapsed} />
       </div>
-      <div className={`flex-1 overflow-y-auto py-4 ${collapsed ? 'px-2' : 'px-3'}`}>
+      <div className={`flex-1 overflow-y-auto py-3 ${collapsed ? 'px-2' : 'px-2.5'}`}>
         <Navigation collapsed={collapsed} onNavigate={onNavigate} />
       </div>
       <div className={`space-y-2 border-t border-line p-3 ${collapsed ? 'px-2' : ''}`}>
@@ -133,7 +131,7 @@ function SidebarContent({ collapsed = false, onNavigate, onToggleCollapsed }) {
             onClick={onToggleCollapsed}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className={`w-full ${collapsed ? 'justify-center px-0' : 'justify-start'}`}
+            className={`w-full text-ink-muted ${collapsed ? 'justify-center px-0' : 'justify-start'}`}
           >
             {collapsed ? (
               <PanelLeftOpen aria-hidden="true" className="size-4" />
@@ -253,30 +251,25 @@ function ThemeToggle() {
   const next = resolved === 'dark' ? 'light' : 'dark';
   const Icon = resolved === 'dark' ? Sun : Moon;
   return (
-    <Button
-      variant="ghost"
-      size="icon"
+    <IconButton
+      label={`Switch to ${next} theme`}
+      icon={Icon}
       onClick={() => setTheme(next)}
-      aria-label={`Switch to ${next} theme`}
-      title={`Switch to ${next} theme`}
-    >
-      <Icon aria-hidden="true" className="size-4.5" />
-    </Button>
+      tooltipSide="bottom"
+    />
   );
 }
 
 function TopBar({ onOpenMenu, onOpenPalette, onOpenHelp }) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-page/85 px-4 backdrop-blur-md sm:gap-3 sm:px-6 lg:px-8 print:hidden">
-      <Button
-        variant="ghost"
-        size="icon"
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-page/80 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-page/70 sm:gap-3 sm:px-6 lg:px-8 print:hidden">
+      <IconButton
+        label="Open menu"
+        icon={MenuIcon}
         onClick={onOpenMenu}
-        aria-label="Open menu"
+        tooltipSide="bottom"
         className="-ml-1 lg:hidden"
-      >
-        <MenuIcon aria-hidden="true" className="size-5" />
-      </Button>
+      />
       <div className="min-w-0 flex-1">
         <Breadcrumbs />
       </div>
@@ -285,7 +278,7 @@ function TopBar({ onOpenMenu, onOpenPalette, onOpenHelp }) {
         onClick={onOpenPalette}
         aria-label="Search"
         aria-keyshortcuts="Control+K Meta+K"
-        className="flex h-9 items-center gap-2 rounded-lg border border-line bg-surface-raised px-2.5 text-sm text-ink-muted shadow-card hover:border-line-strong hover:text-ink-secondary sm:w-64"
+        className="flex h-8 items-center gap-2 rounded-lg border border-line bg-surface-raised px-2.5 text-[13px] text-ink-muted shadow-card transition-colors hover:border-line-strong hover:text-ink-secondary sm:w-60"
       >
         <Search aria-hidden="true" className="size-4" />
         <span className="hidden flex-1 text-left sm:inline">Search…</span>
@@ -297,16 +290,14 @@ function TopBar({ onOpenMenu, onOpenPalette, onOpenHelp }) {
       <div className="flex items-center gap-0.5">
         <NotificationBell />
         <ThemeToggle />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onOpenHelp}
-          aria-label="Keyboard shortcuts"
-          title="Keyboard shortcuts (?)"
-          className="hidden sm:inline-flex"
-        >
-          <CircleHelp aria-hidden="true" className="size-4.5" />
-        </Button>
+        <span className="hidden sm:inline-flex">
+          <IconButton
+            label="Keyboard shortcuts (?)"
+            icon={CircleHelp}
+            onClick={onOpenHelp}
+            tooltipSide="bottom"
+          />
+        </span>
       </div>
       <div aria-hidden="true" className="hidden h-6 w-px bg-line sm:block" />
       <UserMenu onOpenHelp={onOpenHelp} />
@@ -383,8 +374,11 @@ export function AppLayout() {
           aria-modal="true"
           aria-label="Menu"
         >
-          <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
-          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] border-r border-line bg-sidebar shadow-pop">
+          <div
+            className="animate-fade-in absolute inset-0 bg-overlay"
+            onClick={() => setDrawerOpen(false)}
+          />
+          <div className="animate-drawer-in-left absolute inset-y-0 left-0 w-72 max-w-[85vw] border-r border-line bg-sidebar shadow-pop">
             <Button
               variant="ghost"
               size="icon"
@@ -409,7 +403,9 @@ export function AppLayout() {
           id="main"
           className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:max-w-none print:p-0"
         >
-          <Outlet />
+          <div key={location.pathname} className="animate-page-in">
+            <Outlet />
+          </div>
         </main>
       </div>
 

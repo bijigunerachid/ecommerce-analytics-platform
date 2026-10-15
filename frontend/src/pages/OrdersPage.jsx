@@ -11,10 +11,10 @@ import {
 } from '../components/data/ResourceTable.jsx';
 import { OrderStatusBadge } from '../components/ui/Badge.jsx';
 import { Button } from '../components/ui/Button.jsx';
-import { buttonClass } from '../components/ui/button-styles.js';
+import { FILTER_DATE_INPUT, buttonClass } from '../components/ui/button-styles.js';
+import { FilterTabs } from '../components/ui/FilterTabs.jsx';
 import { ExportMenu } from '../components/data/ExportMenu.jsx';
 import { Card } from '../components/ui/Card.jsx';
-import { FilterSelect } from '../components/ui/Field.jsx';
 import { useToast } from '../components/ui/toast-context.js';
 import { BulkStatusDialog } from '../features/orders/BulkStatusDialog.jsx';
 import { useApiQuery } from '../hooks/useApiQuery.js';
@@ -50,8 +50,12 @@ function SelectionBar({ count, onAction, onClear }) {
   );
 }
 
-const DATE_INPUT =
-  'h-9 rounded-lg border border-line-strong bg-surface-raised px-2 text-sm text-ink';
+const DATE_INPUT = FILTER_DATE_INPUT;
+
+const STATUS_TABS = [
+  { value: '', label: 'All' },
+  ...Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => ({ value, label })),
+];
 
 export function OrdersPage() {
   const { canEdit } = usePermissions();
@@ -157,21 +161,26 @@ export function OrdersPage() {
         }
       />
       <Card>
-        <FilterBar>
+        <div className="border-b border-line px-2 sm:px-3">
+          <FilterTabs
+            label="Status"
+            value={params.status}
+            onChange={(status) => update({ status })}
+            options={STATUS_TABS}
+          />
+        </div>
+        <FilterBar
+          activeCount={
+            [params.search, params.dateFrom, params.dateTo, params.customerId].filter(Boolean)
+              .length
+          }
+          onClear={() => update({ search: '', dateFrom: '', dateTo: '', customerId: '' })}
+        >
           <SearchInput
             label="Search orders"
             placeholder="Customer, email, or order #"
             value={params.search}
             onChange={(search) => update({ search })}
-          />
-          <FilterSelect
-            label="Status"
-            value={params.status}
-            onChange={(e) => update({ status: e.target.value })}
-            options={[
-              { value: '', label: 'Any status' },
-              ...Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => ({ value, label })),
-            ]}
           />
           <div className="flex items-center gap-2">
             <label className="sr-only" htmlFor="orders-from">
@@ -204,7 +213,7 @@ export function OrdersPage() {
             <button
               type="button"
               onClick={() => update({ customerId: '' })}
-              className="inline-flex h-8 items-center gap-1 rounded-full bg-accent-soft/60 px-3 text-xs font-medium text-ink dark:bg-accent-soft"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-accent/30 bg-accent-soft px-2.5 text-[13px] font-medium text-ink"
             >
               Customer #{params.customerId}
               <X aria-label="Clear customer filter" className="size-3.5" />

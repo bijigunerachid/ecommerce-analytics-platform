@@ -8,6 +8,18 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Design system v2: neutral zinc surfaces with an indigo accent in both themes, refined
+  elevation, typography, and spacing, and subtle motion that respects reduced-motion settings.
+- Create and edit forms (products, categories, customers, users, stock adjustments) open in a
+  side drawer; confirmations show an icon and a loading state.
+- Row actions are icon buttons with tooltips; "Active" settings are switches; prices show the
+  currency symbol in the field.
+- Orders filter by status with tabs, and list filters have a "Clear filters" button.
+- The dashboard is grouped into Sales, Products and customers, and Operations sections; the
+  category panel shows the top seven categories plus "Other".
+- Toasts can carry a description and an action, and pause while hovered.
+- End-to-end tests reuse a single category instead of creating one per run.
+
 - Accessibility: higher-contrast accent color for links and primary buttons (WCAG AA in both
   themes), muted text contrast, keyboard access to scrolling tables, underlined inline links.
 - Live activity no longer drops an event that arrives while the list is loading, and the event

@@ -1,3 +1,4 @@
+import { CircleHelp, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { errorMessage } from '../../utils/errors.js';
 import { Button } from './Button.jsx';
@@ -6,7 +7,8 @@ import { Modal } from './Modal.jsx';
 
 /**
  * Asks for confirmation, runs `onConfirm`, and shows its error (e.g. "still in use") in place.
- * Closes only when the action succeeds.
+ * Closes only when the action succeeds. Destructive actions (`danger`) get a warning icon and
+ * a red confirm button.
  */
 export function ConfirmDialog({
   open,
@@ -38,6 +40,7 @@ export function ConfirmDialog({
     }
   }
 
+  const Icon = danger ? TriangleAlert : CircleHelp;
   return (
     <Modal
       open={open}
@@ -45,12 +48,22 @@ export function ConfirmDialog({
       onClose={close}
       busy={busy}
       size="sm"
+      icon={
+        <span
+          aria-hidden="true"
+          className={`flex size-9 shrink-0 items-center justify-center rounded-full ${
+            danger ? 'bg-status-critical/10 text-text-critical' : 'bg-accent-soft text-accent'
+          }`}
+        >
+          <Icon className="size-4.5" />
+        </span>
+      }
       footer={
         <>
           <Button variant="secondary" onClick={close} disabled={busy}>
             Cancel
           </Button>
-          <Button variant={danger ? 'danger' : 'primary'} onClick={confirm} disabled={busy}>
+          <Button variant={danger ? 'danger' : 'primary'} onClick={confirm} loading={busy}>
             {busy ? 'Working…' : confirmLabel}
           </Button>
         </>

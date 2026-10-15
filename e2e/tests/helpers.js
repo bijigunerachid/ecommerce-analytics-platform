@@ -19,7 +19,11 @@ export async function adminApi(baseURL) {
     post: (path, data, headers) => call('POST', path, data, headers),
 
     async seedCatalog(tag = unique()) {
-      const { category } = await call('POST', '/categories', { name: `E2E ${tag}` });
+      // One shared category for every run, so test data does not crowd category charts.
+      const found = await call('GET', `/categories?search=${encodeURIComponent('E2E tests')}`);
+      const category =
+        found.data.find((c) => c.name === 'E2E tests') ??
+        (await call('POST', '/categories', { name: 'E2E tests' })).category;
       const { product } = await call('POST', '/products', {
         sku: `E2E-${tag}`.toUpperCase(),
         name: `E2E Lamp ${tag}`,

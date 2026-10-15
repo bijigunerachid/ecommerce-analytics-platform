@@ -45,14 +45,14 @@ const HIGHLIGHTS = [
 /** Product introduction beside the form on large screens (descriptive only, no figures). */
 function BrandPanel() {
   return (
-    <aside className="relative hidden overflow-hidden bg-linear-to-br from-[#123c70] via-[#1c5cab] to-[#2a78d6] p-12 text-white lg:flex lg:flex-col">
+    <aside className="relative hidden overflow-hidden bg-linear-to-br from-[#1e1b4b] via-[#312e81] to-[#4f46e5] p-12 text-white lg:flex lg:flex-col">
       <div
         aria-hidden="true"
         className="absolute -top-32 -right-32 size-96 rounded-full bg-white/10 blur-3xl"
       />
       <div
         aria-hidden="true"
-        className="absolute -bottom-40 -left-24 size-96 rounded-full bg-[#0b2547]/50 blur-3xl"
+        className="absolute -bottom-40 -left-24 size-96 rounded-full bg-[#0f0c2e]/60 blur-3xl"
       />
       <div className="relative flex items-center gap-2.5">
         <span className="flex size-9 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/25">

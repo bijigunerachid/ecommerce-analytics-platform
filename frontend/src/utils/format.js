@@ -112,3 +112,12 @@ const MONTH_SHORT = new Intl.DateTimeFormat(LOCALE, { month: 'short', timeZone: 
 export function formatMonth(iso, { short = false } = {}) {
   return (short ? MONTH_SHORT : MONTH).format(new Date(iso));
 }
+
+/** The configured currency's symbol, e.g. "€" (for input prefixes). */
+export function currencySymbol() {
+  return (
+    new Intl.NumberFormat(LOCALE, { style: 'currency', currency: CURRENCY })
+      .formatToParts(0)
+      .find((p) => p.type === 'currency')?.value ?? CURRENCY
+  );
+}

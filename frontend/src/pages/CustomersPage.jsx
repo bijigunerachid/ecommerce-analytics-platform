@@ -9,12 +9,12 @@ import {
   ResourceTable,
   SearchInput,
 } from '../components/data/ResourceTable.jsx';
-import { Button } from '../components/ui/Button.jsx';
+import { Button, IconButton } from '../components/ui/Button.jsx';
 import { ExportMenu } from '../components/data/ExportMenu.jsx';
 import { Card } from '../components/ui/Card.jsx';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx';
 import { FormError, TextField } from '../components/ui/Field.jsx';
-import { Modal } from '../components/ui/Modal.jsx';
+import { Drawer } from '../components/ui/Drawer.jsx';
 import { useToast } from '../components/ui/toast-context.js';
 import { useApiQuery } from '../hooks/useApiQuery.js';
 import { rules, useForm } from '../hooks/useForm.js';
@@ -61,7 +61,7 @@ function CustomerForm({ customer, onClose, onSaved }) {
 
   const f = form;
   return (
-    <Modal
+    <Drawer
       open
       size="lg"
       title={customer ? 'Edit customer' : 'New customer'}
@@ -129,7 +129,7 @@ function CustomerForm({ customer, onClose, onSaved }) {
           maxLength={100}
         />
       </form>
-    </Modal>
+    </Drawer>
   );
 }
 
@@ -210,22 +210,19 @@ export function CustomersPage() {
           </Link>
           {canEdit && (
             <>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`Edit ${c.firstName} ${c.lastName}`}
+              <IconButton
+                label={`Edit ${c.firstName} ${c.lastName}`}
+                icon={Pencil}
+                size="icon-sm"
                 onClick={() => setEditing(c)}
-              >
-                <Pencil aria-hidden="true" className="size-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`Delete ${c.firstName} ${c.lastName}`}
+              />
+              <IconButton
+                label={`Delete ${c.firstName} ${c.lastName}`}
+                icon={Trash2}
+                size="icon-sm"
+                variant="subtle-danger"
                 onClick={() => setDeleting(c)}
-              >
-                <Trash2 aria-hidden="true" className="size-4" />
-              </Button>
+              />
             </>
           )}
         </div>

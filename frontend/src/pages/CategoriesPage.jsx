@@ -8,11 +8,11 @@ import {
   ResourceTable,
   SearchInput,
 } from '../components/data/ResourceTable.jsx';
-import { Button } from '../components/ui/Button.jsx';
+import { Button, IconButton } from '../components/ui/Button.jsx';
 import { Card } from '../components/ui/Card.jsx';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx';
 import { FormError, TextAreaField, TextField } from '../components/ui/Field.jsx';
-import { Modal } from '../components/ui/Modal.jsx';
+import { Drawer } from '../components/ui/Drawer.jsx';
 import { useToast } from '../components/ui/toast-context.js';
 import { useApiQuery } from '../hooks/useApiQuery.js';
 import { rules, useForm } from '../hooks/useForm.js';
@@ -41,7 +41,7 @@ function CategoryForm({ category, onClose, onSaved }) {
   }
 
   return (
-    <Modal
+    <Drawer
       open
       title={category ? 'Edit category' : 'New category'}
       onClose={onClose}
@@ -75,7 +75,7 @@ function CategoryForm({ category, onClose, onSaved }) {
           maxLength={2000}
         />
       </form>
-    </Modal>
+    </Drawer>
   );
 }
 
@@ -128,22 +128,19 @@ export function CategoriesPage() {
             align: 'right',
             render: (c) => (
               <div className="flex justify-end gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Edit ${c.name}`}
+                <IconButton
+                  label={`Edit ${c.name}`}
+                  icon={Pencil}
+                  size="icon-sm"
                   onClick={() => setEditing(c)}
-                >
-                  <Pencil aria-hidden="true" className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Delete ${c.name}`}
+                />
+                <IconButton
+                  label={`Delete ${c.name}`}
+                  icon={Trash2}
+                  size="icon-sm"
+                  variant="subtle-danger"
                   onClick={() => setDeleting(c)}
-                >
-                  <Trash2 aria-hidden="true" className="size-4" />
-                </Button>
+                />
               </div>
             ),
           },

@@ -1,8 +1,8 @@
 import { Radio, RotateCw } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { analyticsApi } from '../api/endpoints.js';
 import { useAuth } from '../auth/AuthContext.js';
-import { Button } from '../components/ui/Button.jsx';
+import { IconButton } from '../components/ui/Button.jsx';
 import { CustomersPanel } from '../features/dashboard/CustomersPanel.jsx';
 import { DateRangeControl } from '../features/dashboard/DateRangeControl.jsx';
 import { KpiTiles } from '../features/dashboard/KpiTiles.jsx';
@@ -84,7 +84,7 @@ function LiveToggle({ live, onToggle }) {
       onClick={onToggle}
       aria-pressed={live}
       title={live ? 'Refreshing every 15 seconds' : 'Refresh automatically every 15 seconds'}
-      className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-sm font-medium shadow-card transition-colors ${
+      className={`inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-[13px] font-medium shadow-card transition-colors ${
         live
           ? 'border-status-good/40 bg-status-good/10 text-ink'
           : 'border-line-strong bg-surface-raised text-ink-secondary hover:text-ink'
@@ -104,6 +104,22 @@ function LiveToggle({ live, onToggle }) {
   );
 }
 
+/** A titled group of panels; the heading level keeps the page outline navigable. */
+function DashboardSection({ title, description, children }) {
+  const id = useId();
+  return (
+    <section aria-labelledby={id} className="space-y-4">
+      <div className="flex items-baseline gap-3 border-b border-line pb-2">
+        <h2 id={id} className="text-sm font-semibold text-ink">
+          {title}
+        </h2>
+        <p className="hidden text-xs text-ink-muted sm:block">{description}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export function DashboardPage() {
   const dateRange = useDateRange();
   const { user } = useAuth();
@@ -115,14 +131,14 @@ export function DashboardPage() {
   const range = { from: dateRange.from, to: dateRange.to, days };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-accent">
+          <p className="text-[13px] text-ink-muted">
             {greeting()}
             {firstName ? `, ${firstName}` : ''}
           </p>
-          <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-ink">Dashboard</h1>
+          <h1 className="mt-0.5 text-[22px] leading-tight font-semibold text-ink">Dashboard</h1>
           <p className="mt-1 text-sm text-ink-secondary">
             {formatDay(range.from)} – {formatDay(range.to)} (UTC)
           </p>
@@ -132,33 +148,48 @@ export function DashboardPage() {
         <div className="flex flex-wrap items-center gap-2">
           <LiveToggle live={live} onToggle={toggleLive} />
           <DateRangeControl key={dateRange.preset} range={dateRange} />
-          <Button variant="secondary" size="icon" onClick={bumpRefresh} aria-label="Refresh data">
-            <RotateCw aria-hidden="true" className="size-4" />
-          </Button>
+          <IconButton
+            label="Refresh data"
+            icon={RotateCw}
+            variant="secondary"
+            size="icon-sm"
+            onClick={bumpRefresh}
+          />
         </div>
       </header>
 
-      <KpiTiles range={range} refreshKey={refreshKey} />
-
-      <div className="grid gap-4 xl:grid-cols-3">
-        <RevenuePanel range={range} refreshKey={refreshKey} className="xl:col-span-2" />
-        <OrderStatusPanel refreshKey={refreshKey} />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        <TopProductsPanel range={range} refreshKey={refreshKey} />
-        <CategoriesPanel range={range} refreshKey={refreshKey} />
-        <CustomersPanel range={range} refreshKey={refreshKey} />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        <InventoryPanel range={range} refreshKey={refreshKey} />
-        <AnomaliesPanel range={range} refreshKey={refreshKey} />
-        <div className="flex flex-col gap-4">
-          <LiveActivityPanel refreshKey={refreshKey} />
-          <PipelinePanel refreshKey={refreshKey} />
+      <DashboardSection title="Sales" description="Revenue and orders in the selected period">
+        <KpiTiles range={range} refreshKey={refreshKey} />
+        <div className="grid gap-4 xl:grid-cols-3">
+          <RevenuePanel range={range} refreshKey={refreshKey} className="xl:col-span-2" />
+          <OrderStatusPanel refreshKey={refreshKey} />
         </div>
-      </div>
+      </DashboardSection>
+
+      <DashboardSection
+        title="Products and customers"
+        description="What sells, in which categories, and who buys"
+      >
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          <TopProductsPanel range={range} refreshKey={refreshKey} />
+          <CategoriesPanel range={range} refreshKey={refreshKey} />
+          <CustomersPanel range={range} refreshKey={refreshKey} />
+        </div>
+      </DashboardSection>
+
+      <DashboardSection
+        title="Operations"
+        description="Stock, unusual activity, and the data pipeline"
+      >
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          <InventoryPanel range={range} refreshKey={refreshKey} />
+          <AnomaliesPanel range={range} refreshKey={refreshKey} />
+          <div className="flex flex-col gap-4">
+            <LiveActivityPanel refreshKey={refreshKey} />
+            <PipelinePanel refreshKey={refreshKey} />
+          </div>
+        </div>
+      </DashboardSection>
     </div>
   );
 }

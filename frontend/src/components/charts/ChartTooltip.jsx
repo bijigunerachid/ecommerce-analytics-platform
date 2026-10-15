@@ -5,7 +5,7 @@
 export function ChartTooltip({ active, payload, label, labelFormatter, valueFormatter }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-line bg-surface-raised px-3 py-2 text-xs shadow-lg">
+    <div className="rounded-lg border border-line bg-surface-raised px-3 py-2 text-xs shadow-pop">
       <p className="mb-1 font-medium text-ink-secondary">
         {labelFormatter ? labelFormatter(label) : label}
       </p>

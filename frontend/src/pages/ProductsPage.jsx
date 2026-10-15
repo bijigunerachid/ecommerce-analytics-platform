@@ -10,25 +10,25 @@ import {
   SearchInput,
 } from '../components/data/ResourceTable.jsx';
 import { ActiveBadge } from '../components/ui/Badge.jsx';
-import { Button } from '../components/ui/Button.jsx';
+import { Button, IconButton } from '../components/ui/Button.jsx';
 import { ExportMenu } from '../components/data/ExportMenu.jsx';
 import { Card } from '../components/ui/Card.jsx';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx';
 import {
-  CheckboxField,
+  SwitchField,
   FilterSelect,
   FormError,
   SelectField,
   TextAreaField,
   TextField,
 } from '../components/ui/Field.jsx';
-import { Modal } from '../components/ui/Modal.jsx';
+import { Drawer } from '../components/ui/Drawer.jsx';
 import { StatusBadge } from '../components/ui/StatusBadge.jsx';
 import { useToast } from '../components/ui/toast-context.js';
 import { useApiQuery } from '../hooks/useApiQuery.js';
 import { rules, useForm } from '../hooks/useForm.js';
 import { cleanParams, useListParams } from '../hooks/useListParams.js';
-import { formatMoney, formatNumber } from '../utils/format.js';
+import { currencySymbol, formatMoney, formatNumber } from '../utils/format.js';
 
 function useCategoryOptions() {
   // Category lists are short; 100 covers every realistic catalog for a select.
@@ -93,7 +93,7 @@ function ProductForm({ product, onClose, onSaved }) {
 
   const f = form;
   return (
-    <Modal
+    <Drawer
       open
       size="lg"
       title={isNew ? 'New product' : `Edit ${product.sku}`}
@@ -146,6 +146,7 @@ function ProductForm({ product, onClose, onSaved }) {
           label="Price"
           required
           inputMode="decimal"
+          prefix={currencySymbol()}
           value={f.values.price}
           onChange={f.setField('price')}
           error={f.errors.price}
@@ -182,7 +183,7 @@ function ProductForm({ product, onClose, onSaved }) {
           error={f.errors.description}
           maxLength={2000}
         />
-        <CheckboxField
+        <SwitchField
           className="sm:col-span-2"
           label="Active"
           hint="Inactive products cannot be ordered"
@@ -190,7 +191,7 @@ function ProductForm({ product, onClose, onSaved }) {
           onChange={f.setField('isActive')}
         />
       </form>
-    </Modal>
+    </Drawer>
   );
 }
 
@@ -272,22 +273,19 @@ export function ProductsPage() {
             align: 'right',
             render: (p) => (
               <div className="flex justify-end gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Edit ${p.sku}`}
+                <IconButton
+                  label={`Edit ${p.sku}`}
+                  icon={Pencil}
+                  size="icon-sm"
                   onClick={() => setEditing(p)}
-                >
-                  <Pencil aria-hidden="true" className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Delete ${p.sku}`}
+                />
+                <IconButton
+                  label={`Delete ${p.sku}`}
+                  icon={Trash2}
+                  size="icon-sm"
+                  variant="subtle-danger"
                   onClick={() => setDeleting(p)}
-                >
-                  <Trash2 aria-hidden="true" className="size-4" />
-                </Button>
+                />
               </div>
             ),
           },

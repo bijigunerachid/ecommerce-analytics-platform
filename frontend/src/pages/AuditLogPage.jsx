@@ -10,6 +10,7 @@ import {
 } from '../components/data/ResourceTable.jsx';
 import { ExportMenu } from '../components/data/ExportMenu.jsx';
 import { Badge } from '../components/ui/Badge.jsx';
+import { FILTER_DATE_INPUT } from '../components/ui/button-styles.js';
 import { Card } from '../components/ui/Card.jsx';
 import { FilterSelect } from '../components/ui/Field.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
@@ -18,8 +19,7 @@ import { cleanParams, useListParams } from '../hooks/useListParams.js';
 import { formatDateTime } from '../utils/format.js';
 import { AUDIT_ACTION_LABELS } from '../utils/labels.js';
 
-const DATE_INPUT =
-  'h-9 rounded-lg border border-line-strong bg-surface-raised px-2 text-sm text-ink shadow-card';
+const DATE_INPUT = FILTER_DATE_INPUT;
 
 const ENTITY_LINKS = {
   order: (id) => `/orders/${id}`,
