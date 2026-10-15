@@ -3,7 +3,7 @@ name: ecommerce-analytics
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: ecommerce-postgres
+    container_name: ${CONTAINER_PREFIX:-ecommerce}-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
@@ -27,7 +27,7 @@ services:
   # Single-node Kafka in KRaft mode (no ZooKeeper): one process acts as broker and controller.
   kafka:
     image: apache/kafka:4.2.1
-    container_name: ecommerce-kafka
+    container_name: ${CONTAINER_PREFIX:-ecommerce}-kafka
     restart: unless-stopped
     environment:
       KAFKA_NODE_ID: 1
@@ -70,8 +70,8 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    image: ecommerce-backend:dev
-    container_name: ecommerce-migrate
+    image: ecommerce-backend:${IMAGE_TAG:-dev}
+    container_name: ${CONTAINER_PREFIX:-ecommerce}-migrate
     restart: "no"
     depends_on:
       postgres:
@@ -105,7 +105,7 @@ services:
   # REST API. Not published on the host: the web container proxies /api to it.
   api:
     <<: *backend
-    container_name: ecommerce-api
+    container_name: ${CONTAINER_PREFIX:-ecommerce}-api
     restart: unless-stopped
     depends_on:
       migrate:
@@ -115,7 +115,7 @@ services:
   # Publishes committed business events from the outbox table to Kafka.
   relay:
     <<: *backend
-    container_name: ecommerce-relay
+    container_name: ${CONTAINER_PREFIX:-ecommerce}-relay
     restart: unless-stopped
     depends_on:
       migrate:
@@ -135,8 +135,8 @@ services:
   # The web app (nginx): serves the React build and proxies /api to the API.
   web:
     build: ./frontend
-    image: ecommerce-web:dev
-    container_name: ecommerce-web
+    image: ecommerce-web:${IMAGE_TAG:-dev}
+    container_name: ${CONTAINER_PREFIX:-ecommerce}-web
     restart: unless-stopped
     depends_on:
       api:
@@ -148,8 +148,8 @@ services:
   spark-streaming:
     &analytics
     build: ./analytics
-    image: ecommerce-analytics:dev
-    container_name: ecommerce-spark-streaming
+    image: ecommerce-analytics:${IMAGE_TAG:-dev}
+    container_name: ${CONTAINER_PREFIX:-ecommerce}-spark-streaming
     restart: unless-stopped
     depends_on:
       kafka:
@@ -171,7 +171,7 @@ services:
       - analytics-data:/data
     ports:
       # Spark UI for the streaming job: http://localhost:4040
-      - "127.0.0.1:4040:4040"
+      - "127.0.0.1:${SPARK_UI_PORT:-4040}:4040"
     healthcheck:
       # Healthy while the job keeps reporting heartbeats to PostgreSQL (see bin/healthcheck.py).
       test: ["CMD", "python3", "bin/healthcheck.py"]
@@ -186,7 +186,7 @@ services:
   #   docker compose start spark-streaming
   spark-rebuild:
     <<: *analytics
-    container_name: ecommerce-spark-rebuild
+    container_name: ${CONTAINER_PREFIX:-ecommerce}-spark-rebuild
     restart: "no"
     profiles: [batch]
     ports: []
@@ -199,7 +199,7 @@ services:
   #   docker compose run --rm spark-insights
   spark-insights:
     <<: *analytics
-    container_name: ecommerce-spark-insights
+    container_name: ${CONTAINER_PREFIX:-ecommerce}-spark-insights
     restart: "no"
     profiles: [batch]
     ports: []
@@ -211,7 +211,7 @@ services:
   #   docker compose run --rm analytics-tests
   analytics-tests:
     <<: *analytics
-    container_name: ecommerce-analytics-tests
+    container_name: ${CONTAINER_PREFIX:-ecommerce}-analytics-tests
     restart: "no"
     profiles: [test]
     ports: []
@@ -229,7 +229,7 @@ services:
   #   Grafana: http://localhost:3000 (admin / GRAFANA_ADMIN_PASSWORD), Prometheus: http://localhost:9090
   prometheus:
     image: prom/prometheus:v3.15.0
-    container_name: ecommerce-prometheus
+    container_name: ${CONTAINER_PREFIX:-ecommerce}-prometheus
     profiles: [observability]
     restart: unless-stopped
     depends_on:
@@ -246,7 +246,7 @@ services:
 
   grafana:
     image: grafana/grafana:13.2.3
-    container_name: ecommerce-grafana
+    container_name: ${CONTAINER_PREFIX:-ecommerce}-grafana
     profiles: [observability]
     restart: unless-stopped
     depends_on:

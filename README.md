@@ -80,7 +80,7 @@ docker compose exec api node scripts/generate-sample-data.js
 | Stop (keep data) | `docker compose down` |
 | Stop and **delete all data** | `docker compose down -v` |
 | Spark UI | <http://localhost:4040> |
-| Check the running stack | `node scripts/smoke-test.mjs` (Node 22; see [docs/development.md](docs/development.md)) |
+| Smoke and browser tests | `node scripts/test-stack.mjs` (a separate throwaway stack on port 8081; see [e2e/README.md](e2e/README.md)) |
 
 Something not working? See [docs/troubleshooting.md](docs/troubleshooting.md).
 
@@ -167,8 +167,8 @@ design, with a sequence diagram of an order and the list of guarantees, is in
 | Backend (API, database, Kafka relay) | `cd backend; npm test` | ✓ with PostgreSQL and Kafka services |
 | Analytics (Spark jobs) | `docker compose run --rm analytics-tests` | ✓ inside the Spark image |
 | Frontend (components, pages, flows) | `cd frontend; npm test` | ✓ plus a production build |
-| Full stack (through nginx) | `node scripts/smoke-test.mjs` | ✓ on a fresh Docker Compose stack |
-| Browser end-to-end and accessibility | `cd e2e; npx playwright test` | ✓ on the same fresh stack |
+| Full stack (through nginx) | `node scripts/test-stack.mjs smoke` | ✓ on a fresh, separate test stack |
+| Browser end-to-end and accessibility | `node scripts/test-stack.mjs e2e` | ✓ on the same test stack |
 
 Details and single-test commands are in [docs/development.md](docs/development.md).
 

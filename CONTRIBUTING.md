@@ -85,9 +85,11 @@ ci: add backend test workflow
 **Full stack job:**
 
 1. Creates a `.env` with throwaway secrets
-2. `docker compose up -d --build --wait web relay` (fresh volumes: migrations, API, relay, nginx)
-3. Creates an admin and runs `scripts/smoke-test.mjs` through nginx: health, security headers,
-   SPA routing, sign-in, orders (pricing, idempotent retry, oversell rejection), event publishing
+2. `node scripts/test-stack.mjs up`: a separate Compose project (`ecommerce-e2e`, fresh volumes:
+   migrations, API, relay, nginx) with a throwaway admin, the same stack developers test locally
+3. Runs `scripts/smoke-test.mjs` through nginx: health, security headers, SPA routing, sign-in,
+   orders (pricing, idempotent retry, oversell rejection), event publishing
+4. Runs the Playwright browser and accessibility tests against it
 
 **Analytics job:**
 

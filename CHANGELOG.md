@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Smoke and browser end-to-end tests run against a separate, throwaway test stack
+  (`node scripts/test-stack.mjs`, Compose project `ecommerce-e2e` on port 8081) next to the
+  development stack, so test records no longer end up in development data. CI uses the same
+  script. The e2e tests now default to `http://localhost:8081`.
+- Docker Compose container names, image tags, and the Spark UI port can be changed
+  (`CONTAINER_PREFIX`, `IMAGE_TAG`, `SPARK_UI_PORT`); the defaults are unchanged.
+
 ## [1.1.0] - 2026-10-15
 
 ### Added
