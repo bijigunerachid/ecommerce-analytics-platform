@@ -8,6 +8,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Brand: the Commerce Analytics logo replaces the generic chart icon in the sidebar, on the
+  sign-in page (now a navy-to-teal panel matching the logo), in the README, and as the favicon
+  and home-screen icon.
+
 - Design system v2: neutral zinc surfaces with an indigo accent in both themes, refined
   elevation, typography, and spacing, and subtle motion that respects reduced-motion settings.
 - Create and edit forms (products, categories, customers, users, stock adjustments) open in a

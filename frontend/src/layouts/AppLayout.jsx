@@ -1,5 +1,4 @@
 import {
-  ChartNoAxesCombined,
   ChevronRight,
   ChevronsUpDown,
   CircleHelp,
@@ -23,6 +22,7 @@ import { Button, IconButton } from '../components/ui/Button.jsx';
 import { Kbd } from '../components/ui/Kbd.jsx';
 import { modKeyLabel } from '../utils/platform.js';
 import { Menu } from '../components/ui/Menu.jsx';
+import { BrandMark } from '../components/BrandMark.jsx';
 import { Tooltip } from '../components/ui/Tooltip.jsx';
 import { CommandPalette } from '../features/command/CommandPalette.jsx';
 import { ShortcutsDialog } from '../features/command/ShortcutsDialog.jsx';
@@ -49,9 +49,7 @@ function Brand({ collapsed = false }) {
       className="flex min-w-0 items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-surface-hover"
       aria-label="Commerce Analytics, go to dashboard"
     >
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-accent-fill to-accent-strong text-on-accent shadow-raised">
-        <ChartNoAxesCombined aria-hidden="true" className="size-4" />
-      </span>
+      <BrandMark />
       {!collapsed && (
         <span className="min-w-0 leading-tight">
           <span className="block truncate text-[13px] font-semibold text-ink">

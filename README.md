@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/images/logo.png" alt="Commerce Analytics: operations and insights" width="360"></p>
+
 # Real-Time E-Commerce Analytics Platform
 
 [![CI](https://github.com/bijigunerachid/ecommerce-analytics-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/bijigunerachid/ecommerce-analytics-platform/actions/workflows/ci.yml)
