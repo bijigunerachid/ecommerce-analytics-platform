@@ -6,35 +6,7 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-### Changed
-
-- Brand: the Commerce Analytics logo replaces the generic chart icon in the sidebar, on the
-  sign-in page (now a navy-to-teal panel matching the logo), in the README, and as the favicon
-  and home-screen icon.
-
-- Design system v2: neutral zinc surfaces with an indigo accent in both themes, refined
-  elevation, typography, and spacing, and subtle motion that respects reduced-motion settings.
-- Create and edit forms (products, categories, customers, users, stock adjustments) open in a
-  side drawer; confirmations show an icon and a loading state.
-- Row actions are icon buttons with tooltips; "Active" settings are switches; prices show the
-  currency symbol in the field.
-- Orders filter by status with tabs, and list filters have a "Clear filters" button.
-- The dashboard is grouped into Sales, Products and customers, and Operations sections; the
-  category panel shows the top seven categories plus "Other".
-- Toasts can carry a description and an action, and pause while hovered.
-- End-to-end tests reuse a single category instead of creating one per run.
-
-- Accessibility: higher-contrast accent color for links and primary buttons (WCAG AA in both
-  themes), muted text contrast, keyboard access to scrolling tables, underlined inline links.
-- Live activity no longer drops an event that arrives while the list is loading, and the event
-  stream opens only once the server listens for changes.
-- Frontend tests render charts at a fixed size (no more Recharts size warnings).
-
-- Redesigned interface: Inter typography, refined surfaces and elevation, skeleton loading
-  states, richer empty and error states, page headers with icons, numbered pagination, and a
-  split-screen sign-in page with a password visibility toggle.
-- App shell with a grouped, collapsible sidebar, breadcrumbs, and an account menu (theme choice,
-  shortcuts, sign out).
+## [1.1.0] - 2026-10-15
 
 ### Added
 
@@ -77,6 +49,37 @@ All notable changes to this project are documented here. The format follows
   and detected anomalies (created by database triggers; existing anomalies are backfilled).
 - Product pages: daily sales, end-of-day stock rebuilt from the ledger, days of stock left, and
   a one-click restock of the suggested quantity (`GET /api/products/:id/insights`).
+
+### Changed
+
+- Redesigned interface (design system v2), inspired by modern SaaS dashboards:
+  - Inter typography, neutral surfaces with an indigo accent, and refined elevation and
+    spacing in both themes, with subtle motion that respects reduced-motion settings.
+  - App shell with a grouped, collapsible sidebar (tooltips when collapsed), breadcrumbs, and
+    an account menu (theme choice, shortcuts, sign out).
+  - Create and edit forms (products, categories, customers, users, stock adjustments) open in a
+    side drawer; confirmations show an icon and a loading state.
+  - Row actions are icon buttons with tooltips; "Active" settings are switches; prices show the
+    currency symbol in the field.
+  - Orders filter by status with tabs, and list filters have a "Clear filters" button.
+  - The dashboard is grouped into Sales, Products and customers, and Operations sections; the
+    category panel shows the top seven categories plus "Other".
+  - Skeleton loading states, richer empty and error states, numbered pagination, and toasts
+    with an optional description and action that pause while hovered.
+  - Split-screen sign-in page with a password visibility toggle.
+- Brand: the Commerce Analytics logo in the sidebar, on the sign-in page, in the README, and as
+  the favicon and home-screen icon.
+- Accessibility: WCAG AA contrast for text, links, and primary buttons in both themes, keyboard
+  access to scrolling tables, underlined inline links, and radio-group keyboard behavior (arrow
+  keys) for tabs and segmented controls.
+- Refreshed screenshots in `docs/screenshots/`.
+
+### Fixed
+
+- Live activity no longer drops an event that arrives while the list is loading, and the event
+  stream opens only once the server listens for changes.
+- Frontend tests render charts at a fixed size (no more Recharts size warnings).
+- End-to-end tests reuse a single category instead of creating one per run.
 
 ## [1.0.0] - 2026-10-14
 
@@ -126,4 +129,6 @@ starts with `docker compose up -d --build --wait`.
 - Documentation: architecture, API, events, database, analytics, frontend, development setup,
   and troubleshooting.
 
+[Unreleased]: https://github.com/bijigunerachid/ecommerce-analytics-platform/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/bijigunerachid/ecommerce-analytics-platform/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/bijigunerachid/ecommerce-analytics-platform/releases/tag/v1.0.0

@@ -287,6 +287,7 @@ elements, so every screen looks and behaves the same.
 | ![Mobile](screenshots/04-dashboard-mobile.png) | ![Orders](screenshots/05-orders.png) |
 | ![New order](screenshots/06-new-order.png) | ![Order detail](screenshots/07-order-detail.png) |
 | ![Inventory ledger](screenshots/08-inventory.png) | ![Product form](screenshots/09-product-form.png) |
+| ![Insights, dark](screenshots/10-insights-dark.png) | |
 
 The dashboard screenshots show the 90-day synthetic dataset (`npm run generate-data`) processed through the
 full pipeline (relay → Kafka → Spark). They were captured with a headless browser.
